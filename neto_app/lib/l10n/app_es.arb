@@ -1,0 +1,49 @@
+{
+    "@@locale": "es",
+    "appName": "NETO",
+    "loginTitle": "Inicia sesión",
+    "registerTitle": "Registrate",
+    "password": "Contraseña",
+    "repeatpassword": "Repetir contraseña",
+    "forgotPassword": "Olvidé la contaseña",
+    "sendNewPasswordtittLe": "Restablecer la contraseña",
+    "sendNewPasswordMsg": "Introduce la dirección de correo electrónico asociada a la cuenta y te enviaremos un enlace para restablecer la contraseña",
+    "passwordRuleMinLength": "Mínimo 8 caracteres",
+    "passwordRuleMinNumber": "Mínimo 1 número",
+    "passwordRuleMinUppercase": "Mínimo 1 mayúscula",
+    "passwordRuleMatch": "Las contraseñas coinciden",
+    "homeTitle": "Resumen",
+    "reportsTitle": "Informes",
+    "profileTitle": "Perfil",
+    "settingsTitle": "Configuración",
+    "sectionRecents": "Movimientos Recientes",
+    "totalIncome": "Ingreso Total",
+    "totalExpense": "Gasto Total",
+    "netBalance": "Balance Neto",
+    
+    "newTransactionTitle": "Añadir Movimiento",
+    "amountLabel": "Monto",
+    "descriptionLabel": "Descripción (Opcional)",
+    "categoryLabel": "Categoría",
+    "frequencyLabel": "Frecuencia",
+    
+    "buttonSave": "Guardar",
+    "buttonCancel": "Cancelar",
+    "buttonSingUp": "Registrarse",
+    "buttonSingIn": "Iniciar sesión",
+    "buttonResetPwd": "Restablecer contraseña",
+    
+    "typeIncome": "Ingreso",
+    "typeExpense": "Gasto",
+    
+    "freqSingle": "Único",
+    "freqMonthly": "Mensual",
+    "freqAnnual": "Anual",
+    
+    "validationRequired": "Este campo es obligatorio.",
+    "errorGeneric": "Ocurrió un error. Inténtalo de nuevo."
+
+
+   
+
+}
