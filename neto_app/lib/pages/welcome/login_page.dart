@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:neto_app/constants/app_dimensions.dart';
+import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_validators.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           "NETO",
           textAlign: TextAlign.start,
-          style: textTheme.titleLarge!.copyWith(letterSpacing: 10, fontSize: 35),
+          style: textTheme.titleLarge!.copyWith(letterSpacing: 6, fontSize: 25),
         ),
       ],
     );

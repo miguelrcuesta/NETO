@@ -203,3 +203,134 @@ class StandarTextField extends StatelessWidget {
     );
   }
 }
+
+// ignore: must_be_immutable
+class SmallTextField extends StatelessWidget {
+  final bool enable;
+  final TextInputType? textInputType;
+  final String? initialValue;
+  final String? hintText;
+  final String? labelText;
+  final TextStyle? labelStyle;
+  final TextEditingController? controller;
+  final FormFieldValidator<String>? validator;
+  final void Function()? onTap;
+  final void Function(String)? onChange;
+  void Function(String?)? onSaved;
+  final EdgeInsetsGeometry? paddingContent;
+  final Color? colorFocusBorder;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextAlign? textAlign;
+  final TextStyle? textInputTheme;
+  final TextStyle? textHintStyle;
+  final double? prefixwidth;
+  final bool? expands;
+  final int? maxLines;
+  final TextAlignVertical? textAlignVertical;
+  final bool? obscoreText;
+  void Function(PointerDownEvent)? onTapOutside;
+  TextInputAction? textInputAction;
+  SmallTextField({
+    super.key,
+    this.hintText,
+    this.labelText,
+    required this.enable,
+    this.initialValue,
+    this.controller,
+    this.validator,
+    this.onTap,
+    this.onChange,
+    this.onSaved,
+    this.textInputType,
+    this.paddingContent,
+    this.colorFocusBorder,
+    this.textAlign,
+    this.inputFormatters,
+    this.textInputTheme,
+    this.labelStyle,
+    this.textHintStyle,
+    this.prefixwidth,
+    this.maxLines,
+    this.expands,
+    this.textAlignVertical,
+    this.obscoreText,
+    this.onTapOutside,
+    this.textInputAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+    return TextFormField(
+      enabled: enable,
+      textAlignVertical: textAlignVertical ?? TextAlignVertical.center,
+      expands: expands ?? false,
+      selectionHeightStyle: BoxHeightStyle.strut,
+      textAlign: textAlign ?? TextAlign.start,
+      maxLines: maxLines == null ? null : 1,
+      inputFormatters: inputFormatters,
+      controller: controller,
+      validator: validator,
+      cursorColor: colorScheme.onSurfaceVariant,
+      initialValue: initialValue,
+      textInputAction: textInputAction ?? TextInputAction.none,
+      keyboardType: textInputType ?? TextInputType.number,
+      obscureText: obscoreText ?? false,
+      style: textInputTheme ?? textTheme.bodyLarge,
+      onTap: onTap,
+      onChanged: onChange,
+      onSaved: onSaved,
+      onTapOutside:
+          onTapOutside ??
+          (event) {
+            // code to unfocus after tap outside
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+
+      decoration: InputDecoration(
+        filled: false,
+        contentPadding: paddingContent,
+        hintText: hintText,
+        hintStyle: textTheme.bodyMedium!.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontStyle: FontStyle.italic,
+        ),
+
+        border: outlineInputBorder(
+          context: context,
+          colorBorder: Colors.transparent,
+          borderWidth: 1,
+          radius: 5,
+        ),
+        enabledBorder: outlineInputBorder(
+          context: context,
+
+          colorBorder: Colors.transparent,
+          borderWidth: 1,
+          radius: 5,
+        ),
+        focusedBorder: outlineInputBorder(
+          context: context,
+          colorBorder: colorFocusBorder ?? colorScheme.primary,
+          borderWidth: 1.5,
+          radius: 5,
+        ),
+        errorBorder: outlineInputBorder(
+          context: context,
+
+          colorBorder: Colors.transparent,
+          borderWidth: 1,
+          radius: 5,
+        ),
+        disabledBorder: outlineInputBorder(
+          context: context,
+
+          colorBorder: Colors.transparent,
+          borderWidth: 1,
+          radius: 5,
+        ),
+      ),
+    );
+  }
+}

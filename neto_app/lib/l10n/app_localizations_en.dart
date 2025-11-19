@@ -12,10 +12,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appName => 'NETO';
 
   @override
-  String get loginTitle => 'Sing In';
+  String get loginTitle => 'Login';
 
   @override
   String get registerTitle => 'Sing Up';
+
+  @override
+  String get createAccount => 'Create Account';
+
+  @override
+  String get initSession => 'Create Account';
 
   @override
   String get password => 'Password';
@@ -67,10 +73,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get totalExpense => 'Total Expense';
 
   @override
+  String get selectACategoryTxt => 'Select category';
+
+  @override
   String get netBalance => 'Net Balance';
 
   @override
-  String get newTransactionTitle => 'Add Transaction';
+  String get newTransactionTitle => 'Create a transaction';
 
   @override
   String get amountLabel => 'Amount';
@@ -86,6 +95,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get buttonSave => 'Save';
+
+  @override
+  String get buttonNext => 'Next';
 
   @override
   String get buttonCancel => 'Cancel';

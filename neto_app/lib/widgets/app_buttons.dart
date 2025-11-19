@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:neto_app/constants/app_dimensions.dart';
+import 'package:neto_app/constants/app_utils.dart';
 
 //########################################################################
 //APPBAR BUTTONS
@@ -19,7 +19,7 @@ class SimpleCircleButton extends StatelessWidget {
     required this.icon,
     this.backgroundColor,
     this.iconColor,
-    this.size = 40,
+    this.size = 30,
     this.iconSize = 20,
     this.boxBorder,
     required this.onTap,
@@ -32,12 +32,10 @@ class SimpleCircleButton extends StatelessWidget {
       onTap: onTap,
       child: ClipOval(
         child: Container(
-          width: size,
-          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: backgroundColor, // Asigna el color de fondo aquí
-            border: boxBorder ?? Border.all(color: colorScheme.outlineVariant, width: 1.5),
+            // border: boxBorder ?? Border.all(color: colorScheme.outlineVariant, width: 1.5),
           ),
           child: Center(
             child: Icon(icon, size: iconSize, color: iconColor ?? colorScheme.surface),

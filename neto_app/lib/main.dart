@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
-import 'package:neto_app/pages/login_page.dart';
-import 'package:neto_app/pages/sing_up_page.dart';
+import 'package:neto_app/pages/transactions/transaction_create_amount_page.dart';
+import 'package:neto_app/pages/transactions/transaction_create_details_page.dart';
 import 'package:neto_app/theme/theme.dart';
 
 void main() {
@@ -16,25 +16,23 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       // 1. Dónde están las traducciones de la app
-      localizationsDelegates: const [
+      localizationsDelegates: [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      locale: Locale('en'),
-      supportedLocales: AppLocalizations.supportedLocales,
+      locale: Locale('es', 'ES'),
+      //supportedLocales: AppLocalizations.supportedLocales,
       title: 'NETO',
       theme: CustomLightTheme.lightThemeData(),
-      home: const MyHomePage(title: 'Hola!!'),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -43,6 +41,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: SignUpPage());
+    return Scaffold(body: TransactionAmountCreatePage());
   }
 }

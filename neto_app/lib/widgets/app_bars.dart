@@ -47,25 +47,33 @@ class TitleAppbarBack extends StatelessWidget implements PreferredSizeWidget {
     TextTheme textTheme = Theme.of(context).textTheme;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
-      title: Text(title, style: textTheme.titleSmall),
+      backgroundColor: colorScheme.surface,
+      title: Text(title, style: textTheme.titleMedium),
       centerTitle: true,
       actions: actions,
-      leading: SimpleCircleButton(
-        icon: CupertinoIcons.add, // El ícono que quieras
-        backgroundColor: colorScheme.surface, // Color de fondo
-        iconColor: colorScheme.onSurface, // Color del ícono
-        size: 50, // Tamaño del botón
-        iconSize: 25, // Tamaño del ícono
-        onTap: () {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
-        },
+      leading: Container(
+        alignment: Alignment.topLeft,
+        margin: const EdgeInsets.only(left: 24.0),
+        child: ClipRRect(
+          child: Container(
+            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+            child: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(CupertinoIcons.chevron_back, size: 20),
+            ),
+          ),
+        ),
       ),
     );
   }
+  // onTap: () {
+  //   if (Navigator.canPop(context)) {
+  //     Navigator.pop(context);
+  //   }
+  // },
 
   // Define el tamaño preferido del widget AppBar.
   @override

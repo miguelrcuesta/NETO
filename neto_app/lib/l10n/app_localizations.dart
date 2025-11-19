@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginTitle.
   ///
   /// In en, this message translates to:
-  /// **'Sing In'**
+  /// **'Login'**
   String get loginTitle;
 
   /// No description provided for @registerTitle.
@@ -115,6 +115,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sing Up'**
   String get registerTitle;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get createAccount;
+
+  /// No description provided for @initSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get initSession;
 
   /// No description provided for @password.
   ///
@@ -212,6 +224,12 @@ abstract class AppLocalizations {
   /// **'Total Expense'**
   String get totalExpense;
 
+  /// No description provided for @selectACategoryTxt.
+  ///
+  /// In en, this message translates to:
+  /// **'Select category'**
+  String get selectACategoryTxt;
+
   /// No description provided for @netBalance.
   ///
   /// In en, this message translates to:
@@ -221,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @newTransactionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add Transaction'**
+  /// **'Create a transaction'**
   String get newTransactionTitle;
 
   /// No description provided for @amountLabel.
@@ -253,6 +271,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get buttonSave;
+
+  /// No description provided for @buttonNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get buttonNext;
 
   /// No description provided for @buttonCancel.
   ///

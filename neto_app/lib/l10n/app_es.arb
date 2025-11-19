@@ -3,6 +3,7 @@
     "appName": "NETO",
     "loginTitle": "Inicia sesión",
     "registerTitle": "Registrate",
+    "createAccount": "Crea una cuenta",
     "password": "Contraseña",
     "repeatpassword": "Repetir contraseña",
     "forgotPassword": "Olvidé la contaseña",
@@ -19,27 +20,24 @@
     "sectionRecents": "Movimientos Recientes",
     "totalIncome": "Ingreso Total",
     "totalExpense": "Gasto Total",
+    "selectACategoryTxt": "Selecciona una categoría",
     "netBalance": "Balance Neto",
-    
-    "newTransactionTitle": "Añadir Movimiento",
+    "newTransactionTitle": "Crea un movimiento",
     "amountLabel": "Monto",
     "descriptionLabel": "Descripción (Opcional)",
     "categoryLabel": "Categoría",
     "frequencyLabel": "Frecuencia",
-    
     "buttonSave": "Guardar",
+    "buttonNext": "Siguiente",
     "buttonCancel": "Cancelar",
     "buttonSingUp": "Registrarse",
     "buttonSingIn": "Iniciar sesión",
     "buttonResetPwd": "Restablecer contraseña",
-    
     "typeIncome": "Ingreso",
     "typeExpense": "Gasto",
-    
     "freqSingle": "Único",
     "freqMonthly": "Mensual",
     "freqAnnual": "Anual",
-    
     "validationRequired": "Este campo es obligatorio.",
     "errorGeneric": "Ocurrió un error. Inténtalo de nuevo."
 

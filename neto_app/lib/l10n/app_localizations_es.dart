@@ -18,6 +18,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get registerTitle => 'Registrate';
 
   @override
+  String get createAccount => 'Crea una cuenta';
+
+  @override
+  String get initSession => 'Create Account';
+
+  @override
   String get password => 'Contraseña';
 
   @override
@@ -67,10 +73,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get totalExpense => 'Gasto Total';
 
   @override
+  String get selectACategoryTxt => 'Selecciona una categoría';
+
+  @override
   String get netBalance => 'Balance Neto';
 
   @override
-  String get newTransactionTitle => 'Añadir Movimiento';
+  String get newTransactionTitle => 'Crea un movimiento';
 
   @override
   String get amountLabel => 'Monto';
@@ -86,6 +95,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get buttonSave => 'Guardar';
+
+  @override
+  String get buttonNext => 'Siguiente';
 
   @override
   String get buttonCancel => 'Cancelar';
