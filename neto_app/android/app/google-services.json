@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "944006642493",
+    "project_id": "neto-66101",
+    "storage_bucket": "neto-66101.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:944006642493:android:acff88ca68a3b98a146354",
+        "android_client_info": {
+          "package_name": "com.company.neto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCejqFuXOmam5KyyfpM_EvT5msHSSPIwo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

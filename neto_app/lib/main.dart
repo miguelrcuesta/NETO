@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
-import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/home/home.dart';
 import 'package:neto_app/pages/transactions/read/transactions_read_page.dart';
 import 'package:neto_app/theme/theme.dart';
@@ -28,7 +27,7 @@ class MyApp extends StatelessWidget {
       //supportedLocales: AppLocalizations.supportedLocales,
       title: 'NETO',
       theme: CustomLightTheme.lightThemeData(),
-      home: const MyHomePage(),
+      home: const TransactionsPage(),
     );
   }
 }
@@ -45,10 +44,10 @@ class _MyHomePageState extends State<MyHomePage> {
   // 3. Lista de widgets/contenidos que se mostrarán en el cuerpo (body)
   final List<Widget> _widgetOptions = <Widget>[
     const HomePage(),
-   const TransactionsPage(),
+    const TransactionsPage(),
     
     // Contenido para el índice 2: Informes
-    Center(child: Text('Página: 2 (Informes)', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white))),
+    Center(child: Text('Página: 2 ()', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white))),
     
     // Contenido para el índice 3: Perfil
     Center(child: Text('Página: 3 (Perfil)', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white))),
