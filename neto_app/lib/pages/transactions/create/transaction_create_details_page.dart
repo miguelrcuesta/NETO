@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_utils.dart';
@@ -10,8 +9,8 @@ import 'package:neto_app/widgets/app_fields.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class TransactionCreateDetailsPage extends StatefulWidget {
-  TransactionModel transactionModel;
-  TransactionCreateDetailsPage({super.key, required this.transactionModel});
+  final TransactionModel transactionModel;
+  const TransactionCreateDetailsPage({super.key, required this.transactionModel});
 
   @override
   State<TransactionCreateDetailsPage> createState() => _TransactionCreateDetailsPageState();
@@ -72,10 +71,10 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
                       //title: Text("Categoría", style: textTheme.titleSmall),
                       title: Text(
                         "Importe",
-                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurface),
+                        style: textTheme.bodySmall!.copyWith(color: colorScheme.onSurface),
                       ),
                       subtitle: Text(
-                        "55",
+                        widget.transactionModel.amount.toStringAsFixed(2),
                         style: textTheme.titleMedium!.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ),
@@ -87,32 +86,16 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
                       //title: Text("Categoría", style: textTheme.titleSmall),
                       title: Text(
                         "Categoría",
-                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurface),
+                        style: textTheme.bodySmall!.copyWith(color: colorScheme.onSurface),
                       ),
                       subtitle: Text(
                         widget.transactionModel.category.isEmpty
                             ? "-"
-                            : widget.transactionModel.category,
+                            : '${widget.transactionModel.category} | ${widget.transactionModel.subcategory}',
                         style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ),
-                    Divider(height: 1, color: colorScheme.outline),
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                      minVerticalPadding: 0.0,
-                      visualDensity: VisualDensity.comfortable,
-                      //title: Text("Categoría", style: textTheme.titleSmall),
-                      title: Text(
-                        "Subcategoría",
-                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurface),
-                      ),
-                      subtitle: Text(
-                        widget.transactionModel.category.isEmpty
-                            ? "-"
-                            : widget.transactionModel.subcategory,
-                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ),
+                    
                   ],
                 ),
               ),
@@ -120,24 +103,23 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
           ),
         ),
       ),
-      persistentFooterButtons: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 30.0),
+      bottomNavigationBar: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30.0,horizontal: 15.0),
           child: StandarButton(
+            radius: 200,
             onPressed: () {
-              widget.transactionModel = widget.transactionModel.copyWith(
+              final updatedTransactionModel = widget.transactionModel.copyWith(
                 date: _selectedDay,
                 year: _selectedDay.year,
                 month: _selectedDay.month,
               );
 
-              //CREAR TRANSACCION EN FIREBASE
+              //CREAR TRANSACCION EN FIREBASE usando updatedTransactionModel
             },
             text: "Siguiente",
           ),
         ),
-      ],
-      persistentFooterDecoration: const BoxDecoration(),
+      
     );
   }
 

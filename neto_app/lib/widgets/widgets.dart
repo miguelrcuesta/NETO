@@ -212,7 +212,7 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
       // Usamos un container de tamaño fijo para asegurar el área de toque
       child: Container(
         width: 80, // Ancho suficiente para toque
-        height: 55, // Alto suficiente para toque
+        height: 45, // Alto suficiente para toque
         alignment: Alignment.center,
         margin: const EdgeInsets.only(top: 16),
         decoration: BoxDecoration(
@@ -233,7 +233,7 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
       },
       child: Text(
         number.toString(),
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black),
+        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.normal, color: Colors.black),
       ),
     );
   }
@@ -256,7 +256,7 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
       },
       child: Text(
         coma,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black),
+        style: const TextStyle(fontSize: 21 , fontWeight: FontWeight.normal, color: Colors.black),
       ),
     );
   }
@@ -344,6 +344,8 @@ class _TransactionCardState extends State<TransactionCard> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
+    dynamic category = getCategory(widget.id);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       height: 80,
@@ -366,7 +368,7 @@ class _TransactionCardState extends State<TransactionCard> {
                   decoration: decorationContainer(
                     context: context,
                     colorFilled:
-                        Expenses.getCategoryById(widget.id)?.color.withAlpha(30) ??
+                        category.color.withAlpha(30) ??
                         colorScheme.primary.withAlpha(30),
                     radius: 8,
                   ),
@@ -375,9 +377,9 @@ class _TransactionCardState extends State<TransactionCard> {
                       Navigator.pop(context);
                     },
                     icon: Icon(
-                      Expenses.getCategoryById(widget.id)?.iconData,
+                      category.iconData,
                       size: 20,
-                      color: Expenses.getCategoryById(widget.id)?.color ?? colorScheme.primary,
+                      color: category.color ?? colorScheme.primary,
                     ),
                   ),
                 ),

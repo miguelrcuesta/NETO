@@ -214,15 +214,15 @@ enum Incomes {
   // Casos (instancias) del Enum, llamando al constructor:
   salario(
     id: 'SALARIO',
-    iconData: Icons.abc,
+    iconData: Icons.work,
     emoji: '💼',
     nombre: 'Salario',
     subcategorias: ['Nómina Principal', 'Horas Extra', 'Bonificaciones', 'Ingresos Freelance'],
-    color: Colors.blueGrey,
+    color: Colors.lightGreen,
   ),
   inversiones(
     id: 'INVERSIONES',
-    iconData: Icons.abc,
+    iconData: Icons.assured_workload,
     emoji: '📈',
     nombre: 'Inversiones',
     subcategorias: [
@@ -236,7 +236,7 @@ enum Incomes {
   ),
   ventasYNegocio(
     id: 'VENTAS',
-    iconData: Icons.abc,
+    iconData: Icons.store,
     emoji: '🛍️',
     nombre: 'Ventas/Negocio',
     subcategorias: [
@@ -249,7 +249,7 @@ enum Incomes {
   ),
   otros(
     id: 'OTROS',
-    iconData: Icons.abc,
+    iconData: Icons.arrow_downward,
     emoji: '',
     nombre: 'Otros Ingresos',
     subcategorias: [

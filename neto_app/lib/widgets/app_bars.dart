@@ -51,7 +51,7 @@ class TitleAppbarBack extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       toolbarHeight: 200,
       backgroundColor: colorScheme.surface,
-      title: Text(title, style: textTheme.titleMedium),
+      title: Text(title, style: textTheme.titleSmall),
       centerTitle: true,
       actions: actions,
       leading: Container(

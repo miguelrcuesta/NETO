@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
-import 'package:neto_app/pages/transactions/create/transaction_create_amount_page.dart';
-import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
+import 'package:neto_app/models/transaction_model.dart';
+import 'package:neto_app/pages/home/home.dart';
 import 'package:neto_app/pages/transactions/read/transactions_read_page.dart';
 import 'package:neto_app/theme/theme.dart';
 
@@ -40,8 +41,65 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  int _selectedIndex = 0;
+  // 3. Lista de widgets/contenidos que se mostrarán en el cuerpo (body)
+  final List<Widget> _widgetOptions = <Widget>[
+    const HomePage(),
+   const TransactionsPage(),
+    
+    // Contenido para el índice 2: Informes
+    Center(child: Text('Página: 2 (Informes)', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white))),
+    
+    // Contenido para el índice 3: Perfil
+    Center(child: Text('Página: 3 (Perfil)', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white))),
+  ];
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: TransactionsPage());
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+    AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: colorScheme.surface, 
+      body: _widgetOptions.elementAt(_selectedIndex), 
+      bottomNavigationBar: Container(
+        color: colorScheme.surface,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
+          child: GNav(
+            color: colorScheme.onSurface,
+            backgroundColor: colorScheme.surface,
+            activeColor: colorScheme.primary,
+            tabBackgroundColor: colorScheme.primary.withAlpha(70),
+            gap: 8,
+            padding: const EdgeInsets.all(16),
+            selectedIndex: _selectedIndex, 
+            onTabChange: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            
+            tabs: const [
+              GButton(
+                icon: Icons.home,
+                text: 'Home',
+              ),
+              GButton(
+                icon: Icons.compare_arrows_sharp,
+                text: 'Movimientos',
+              ),
+              GButton(
+                icon: Icons.folder, // Icono más apropiado para Informes
+                text: 'Informes',
+              ),
+              GButton(
+                icon: Icons.person,
+                text: 'Perfil',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

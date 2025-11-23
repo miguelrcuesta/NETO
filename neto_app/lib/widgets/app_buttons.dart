@@ -87,8 +87,8 @@ class StandarButton extends StatelessWidget {
           backgroundColor: backgroundColor ?? colorScheme.primary,
           minimumSize: Size(width ?? double.infinity, height ?? 45),
           shape: RoundedRectangleBorder(
-            // borderRadius: BorderRadius.circular(radius ?? 4.0),
-            borderRadius: AppDimensions.standardBorderRadius,
+            borderRadius: BorderRadius.circular(radius ?? 4.0),
+            //borderRadius: AppDimensions.standardBorderRadius,
             side: side ?? BorderSide.none,
             // -----------------------------------------------------------------
           ),

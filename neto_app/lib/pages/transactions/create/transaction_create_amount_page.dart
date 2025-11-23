@@ -91,6 +91,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           debugPrint('✅ Clasificación IA Exitosa: $category / $subcategory');
           updateSelectedChoice(category, subcategory); // Asignar a los campos de la UI
         } else {
+          isLoading=false;
           debugPrint('⚠️ Clasificación IA Fallida. Estado: $iaStatus');
         }
       } else {
@@ -163,30 +164,23 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                 const SizedBox(height: AppDimensions.spacingExtraLarge),
                 _amount(formattedAmount, textTheme, amount, colorScheme, symbol),
                 _descriptionamount(textTheme, colorScheme),
+                const SizedBox(height: AppDimensions.spacingSmall),
                 _geminiCategory(textTheme, colorScheme),
-                const SizedBox(height: AppDimensions.spacingMedium),
+                const SizedBox(height: AppDimensions.spacingExtraLarge),
                 TransactionKeyBoardWidget(
                   initialAmount: amountString,
                   onAmountChange: _updateAmount,
                 ),
-                TextButton(
-                  onPressed: () {
-                    debugPrint(selectedCategoryChoice.toString());
-                    debugPrint(selectedSubcategoryChoice.toString());
-                    debugPrint(amount.toString());
-                    debugPrint(symbol.toString());
-                  },
-                  child: Text("data"),
-                ),
+                
               ],
             ),
           ),
         ),
       ),
-      persistentFooterButtons: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 30.0),
+      bottomNavigationBar: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30.0,horizontal: 15.0),
           child: StandarButton(
+            radius: 200,
             onPressed: () {
               transactionModel = transactionModel.copyWith(
                 amount: amount,
@@ -205,8 +199,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
             text: "Siguiente",
           ),
         ),
-      ],
-      persistentFooterDecoration: const BoxDecoration(),
     );
   }
 
@@ -214,7 +206,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
   // WIDGETS
   //#####################################################################################
 
-  Column _geminiCategory(TextTheme textTheme, ColorScheme colorScheme) {
+  Row _geminiCategory(TextTheme textTheme, ColorScheme colorScheme) {
     // Determinar qué categoría se debe mostrar
     String displayCategory = "Sin categoría";
 
@@ -233,212 +225,212 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
       }
     }
 
-    return Column(
+    return Row(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Categoría", style: textTheme.titleSmall),
-            TextButton(
-              onPressed: () async {
-                await showModalBottomSheet(
-                  context: context,
-                  useSafeArea: true,
-                  isScrollControlled: true,
-                  builder: (context) {
-                    return StatefulBuilder(
-                      builder: (context, myState) {
-                        Widget buildIngresoChips(Incomes choice) {
-                          // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
-                          // usamos la variable del state, pero no es necesario para la corrección del bug.
-                          bool isSelected;
-                          TextTheme textTheme = Theme.of(context).textTheme;
-                          ColorScheme colorScheme = Theme.of(context).colorScheme;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 0.0),
-                            child: Column(
-                              children: [
-                                Text(choice.emoji + choice.nombre, style: textTheme.titleSmall),
-                                SizedBox(height: AppDimensions.spacingMedium),
-                                Wrap(
-                                  spacing: 8.0,
-                                  runSpacing: 8.0,
-                                  children: List.generate(choice.subcategorias.length, (index) {
-                                    String subCategoria = choice.subcategorias[index];
-                                    isSelected = subcategoryIngreso == choice.subcategorias[index];
-                                    return ActionChip(
-                                      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-                                      padding: EdgeInsets.zero,
-                                      label: Text(subCategoria),
-
-                                      backgroundColor: isSelected
-                                          ? colorScheme.primaryContainer
-                                          : colorScheme.surfaceBright,
-                                      labelStyle: TextStyle(
-                                        color: isSelected
-                                            ? colorScheme.primary
-                                            : Colors.grey.shade800,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      onPressed: () {
-                                        myState(() {
-                                          subcategoryIngreso = choice.subcategorias[index];
-                                          updateSelectedChoice(
-                                            choice.nombre,
-                                            choice.subcategorias[index],
-                                          );
-                                          debugPrint(choice.nombre);
-                                          debugPrint(choice.subcategorias[index]);
-                                        });
-
-                                        //Navigator.pop(context, choice);
-                                      },
-                                    );
-                                  }),
-                                ),
-                              ],
+        
+        
+        Expanded(
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+            minVerticalPadding: 0.0,
+            visualDensity: VisualDensity.compact,
+            //title: Text("Categoría", style: textTheme.titleSmall),
+            title: _geminiCategorySubtitle(
+              textTheme,
+              colorScheme,
+              displayCategory,
+            ), // Usamos la nueva variable
+          ),
+        ),
+        TextButton(
+          onPressed: () async {
+            await showModalBottomSheet(
+              context: context,
+              useSafeArea: true,
+              isScrollControlled: true,
+              builder: (context) {
+                return StatefulBuilder(
+                  builder: (context, myState) {
+                    Widget buildIngresoChips(Incomes choice) {
+                      // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
+                      // usamos la variable del state, pero no es necesario para la corrección del bug.
+                      bool isSelected;
+                      TextTheme textTheme = Theme.of(context).textTheme;
+                      ColorScheme colorScheme = Theme.of(context).colorScheme;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("${choice.emoji} ${choice.nombre}", style: textTheme.titleMedium),
+                            SizedBox(height: AppDimensions.spacingMedium),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: List.generate(choice.subcategorias.length, (index) {
+                                String subCategoria = choice.subcategorias[index];
+                                isSelected = subcategoryIngreso == choice.subcategorias[index];
+                                return ActionChip(
+                                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: EdgeInsets.zero,
+                                  label: Text(subCategoria),
+        
+                                  backgroundColor: isSelected
+                                      ? colorScheme.primaryContainer
+                                      : colorScheme.surfaceBright,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? colorScheme.primary
+                                        : Colors.grey.shade800,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  onPressed: () {
+                                    myState(() {
+                                      subcategoryIngreso = choice.subcategorias[index];
+                                      updateSelectedChoice(
+                                        choice.nombre,
+                                        choice.subcategorias[index],
+                                      );
+                                      debugPrint(choice.nombre);
+                                      debugPrint(choice.subcategorias[index]);
+                                    });
+        
+                                    //Navigator.pop(context, choice);
+                                  },
+                                );
+                              }),
                             ),
-                          );
-                        }
-
-                        Widget buildGastoChips(Expenses choice) {
-                          // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
-                          // usamos la variable del state, pero no es necesario para la corrección del bug.
-                          bool isSelected;
-                          TextTheme textTheme = Theme.of(context).textTheme;
-                          ColorScheme colorScheme = Theme.of(context).colorScheme;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(choice.emoji + choice.nombre, style: textTheme.titleMedium),
-                                SizedBox(height: AppDimensions.spacingMedium),
-                                Wrap(
-                                  spacing: 8.0,
-                                  runSpacing: 8.0,
-                                  children: List.generate(choice.subcategorias.length, (index) {
-                                    isSelected = subcategoryGasto == choice.subcategorias[index];
-                                    String subCategoria = choice.subcategorias[index];
-
-                                    return ActionChip(
-                                      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-                                      padding: EdgeInsets.zero,
-                                      label: Text(subCategoria),
-
-                                      backgroundColor: isSelected
-                                          ? colorScheme.primaryContainer
-                                          : colorScheme.surface,
-                                      labelStyle: TextStyle(
-                                        color: isSelected
-                                            ? colorScheme.primary
-                                            : colorScheme.onSurface,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                        side: BorderSide(
-                                          color: isSelected
-                                              ? colorScheme.primary
-                                              : Colors.grey.shade400, // Color del borde
-                                          width: isSelected ? 1.5 : 1.0, // Grosor del borde
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        myState(() {
-                                          subcategoryGasto = choice.subcategorias[index];
-                                          updateSelectedChoice(
-                                            choice.nombre,
-                                            choice.subcategorias[index],
-                                          );
-
-                                          debugPrint(choice.nombre);
-                                          debugPrint(choice.subcategorias[index]);
-                                        });
-                                      },
-                                    );
-                                  }),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        return Scaffold(
-                          appBar: TitleAppbarBack(title: "Elige una categoría"),
-                          body: SingleChildScrollView(
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16.0),
-                              // Se usa mainAxisSize.min para ajustar la altura al contenido
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Categorías de Gasto
-                                  if (transactionType == TransactionType.expense.id)
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      spacing: 8.0,
-
-                                      children: Expenses.values
-                                          .map(
-                                            (categoria) => buildGastoChips(categoria),
-                                          ) // Llama a la función que crea el Chip
-                                          .toList(),
+                          ],
+                        ),
+                      );
+                    }
+        
+                    Widget buildGastoChips(Expenses choice) {
+                      // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
+                      // usamos la variable del state, pero no es necesario para la corrección del bug.
+                      bool isSelected;
+                      TextTheme textTheme = Theme.of(context).textTheme;
+                      ColorScheme colorScheme = Theme.of(context).colorScheme;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(choice.emoji + choice.nombre, style: textTheme.titleMedium),
+                            SizedBox(height: AppDimensions.spacingMedium),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: List.generate(choice.subcategorias.length, (index) {
+                                isSelected = subcategoryGasto == choice.subcategorias[index];
+                                String subCategoria = choice.subcategorias[index];
+        
+                                return ActionChip(
+                                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: EdgeInsets.zero,
+                                  label: Text(subCategoria),
+        
+                                  backgroundColor: isSelected
+                                      ? colorScheme.primaryContainer
+                                      : colorScheme.surface,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurface,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? colorScheme.primary
+                                          : Colors.grey.shade400, // Color del borde
+                                      width: isSelected ? 1.5 : 1.0, // Grosor del borde
                                     ),
-                                  // Categorías de Ingreso
-                                  if (transactionType == TransactionType.income.id)
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      spacing: 8.0,
-
-                                      children: Incomes.values
-                                          .map(
-                                            (categoria) => buildIngresoChips(categoria),
-                                          ) // Llama a la función que crea el Chip
-                                          .toList(),
-                                    ),
-
-                                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16),
-                                ],
-                              ),
+                                  ),
+                                  onPressed: () {
+                                    myState(() {
+                                      subcategoryGasto = choice.subcategorias[index];
+                                      updateSelectedChoice(
+                                        choice.nombre,
+                                        choice.subcategorias[index],
+                                      );
+        
+                                      debugPrint(choice.nombre);
+                                      debugPrint(choice.subcategorias[index]);
+                                    });
+                                  },
+                                );
+                              }),
                             ),
+                          ],
+                        ),
+                      );
+                    }
+        
+                    return Scaffold(
+                      appBar: TitleAppbarBack(title: "Elige una categoría"),
+                      body: SingleChildScrollView(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16.0),
+                          // Se usa mainAxisSize.min para ajustar la altura al contenido
+                          child: Column(
+                             
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Categorías de Gasto
+                              if (transactionType == TransactionType.expense.id)
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 8.0,
+        
+                                  children: Expenses.values
+                                      .map(
+                                        (categoria) => buildGastoChips(categoria),
+                                      ) // Llama a la función que crea el Chip
+                                      .toList(),
+                                ),
+                              // Categorías de Ingreso
+                              if (transactionType == TransactionType.income.id)
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 8.0,
+        
+                                  children: Incomes.values
+                                      .map(
+                                        (categoria) => buildIngresoChips(categoria),
+                                      ) // Llama a la función que crea el Chip
+                                      .toList(),
+                                ),
+        
+                              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     );
                   },
                 );
               },
-              child: Text(
-                "Cambiar",
-                style: textTheme.bodySmall!.copyWith(color: colorScheme.primary),
-              ),
-            ),
-          ],
-        ),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-          minVerticalPadding: 0.0,
-          visualDensity: VisualDensity.comfortable,
-          //title: Text("Categoría", style: textTheme.titleSmall),
-          title: _geminiCategorySubtitle(
-            textTheme,
-            colorScheme,
-            displayCategory,
-          ), // Usamos la nueva variable
+            );
+          },
+          child: Text(
+            "Cambiar",
+            style: textTheme.bodySmall!.copyWith(color: colorScheme.primary),
+          ),
         ),
       ],
     );

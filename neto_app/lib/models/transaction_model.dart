@@ -3,6 +3,7 @@ class TransactionModel {
   final String type;
   final String currency;
   final double amount;
+  final String categoryid;
   final String category;
   final String subcategory;
   final DateTime? date;
@@ -22,6 +23,7 @@ class TransactionModel {
     required this.type,
     required this.currency,
     required this.amount,
+    required this.categoryid,
     required this.category,
     required this.subcategory,
     this.date,
@@ -40,6 +42,7 @@ class TransactionModel {
     this.type = '',
     this.currency = '',
     this.amount = 0.0,
+    this.categoryid = '',
     this.category = '',
     this.subcategory = '',
     this.date,
@@ -58,6 +61,7 @@ class TransactionModel {
     String? type,
     String? currency,
     double? amount,
+    String? categoryid,
     String? category,
     String? subcategory,
     DateTime? date,
@@ -72,6 +76,7 @@ class TransactionModel {
       type: type ?? this.type,
       currency: currency ?? this.currency,
       amount: amount ?? this.amount,
+      categoryid: categoryid ?? this.categoryid,
       category: category ?? this.category,
       subcategory: subcategory ?? this.subcategory,
       date: date ?? this.date,
@@ -95,6 +100,7 @@ class TransactionModel {
       type: map['type'] as String? ?? 'UNKNOWN_TYPE',
       currency: map['currency'] as String? ?? 'UNKNOWN_CURRENCY',
       amount: (map['amount'] as num? ?? 0.0).toDouble(),
+      categoryid: map['categoryid'] as String? ?? 'UNKNOWN_CATEGORYID',
       category: map['category'] as String? ?? 'UNKNOWN_CATEGORY',
       subcategory: map['subcategory'] as String? ?? 'UNKNOWN_SUBCATEGORY',
       date: date,
@@ -113,10 +119,10 @@ class TransactionModel {
       'type': type,
       'currency': currency,
       'amount': amount,
+      'categoryid': categoryid,
       'category': category,
       'subcategory': subcategory,
-      // El SDK de Firebase convierte automáticamente DateTime a Timestamp
-      'date': date,
+      'date': date!.toIso8601String(),
       'year': year,
       'month': month,
       'frequency': frequency,
