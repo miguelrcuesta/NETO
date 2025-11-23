@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
-import 'package:neto_app/pages/transactions/transaction_create_amount_page.dart';
-import 'package:neto_app/pages/transactions/transaction_create_details_page.dart';
+import 'package:neto_app/pages/transactions/create/transaction_create_amount_page.dart';
+import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
+import 'package:neto_app/pages/transactions/read/transactions_read_page.dart';
 import 'package:neto_app/theme/theme.dart';
 
 void main() {
@@ -41,6 +42,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: TransactionAmountCreatePage());
+    return Scaffold(body: TransactionsPage());
   }
 }

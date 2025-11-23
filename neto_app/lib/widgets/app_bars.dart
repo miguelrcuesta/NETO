@@ -33,21 +33,23 @@ class TitleAppbar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
+// ignore: must_be_immutable
 class TitleAppbarBack extends StatelessWidget implements PreferredSizeWidget {
   // Título del AppBar, es requerido.
   final String title;
+  PreferredSizeWidget? bottom;
 
   // Acciones opcionales a la derecha (ej: botón de configuración).
   final List<Widget>? actions;
 
-  const TitleAppbarBack({super.key, required this.title, this.actions});
+  TitleAppbarBack({super.key, required this.title, this.actions, this.bottom});
 
   @override
   Widget build(BuildContext context) {
     TextTheme textTheme = Theme.of(context).textTheme;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return AppBar(
-      elevation: 0,
+      toolbarHeight: 200,
       backgroundColor: colorScheme.surface,
       title: Text(title, style: textTheme.titleMedium),
       centerTitle: true,
@@ -67,6 +69,7 @@ class TitleAppbarBack extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ),
+      bottom: bottom,
     );
   }
   // onTap: () {

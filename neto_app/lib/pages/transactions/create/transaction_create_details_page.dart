@@ -1,17 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:neto_app/constants/app_enums.dart';
-import 'package:neto_app/constants/app_strings.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/widgets/app_bars.dart';
+import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 class TransactionCreateDetailsPage extends StatefulWidget {
-  const TransactionCreateDetailsPage({super.key});
+  TransactionModel transactionModel;
+  TransactionCreateDetailsPage({super.key, required this.transactionModel});
 
   @override
   State<TransactionCreateDetailsPage> createState() => _TransactionCreateDetailsPageState();
@@ -28,66 +28,10 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
   DateTime transactionDate = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
-  CategoriaGasto? _selectedChoice;
-  String? sugerenciaGemini;
-  bool isLoading = false;
 
   //#####################################################################################
   //FUNCIONES
   //#####################################################################################
-
-  // Función que se llama cuando se selecciona un chip.
-  void _updateSelection(CategoriaGasto choice) {
-    setState(() {
-      _selectedChoice = choice;
-    });
-  }
-
-  Future<String?> geminiGetCategory(String description) async {
-    // 1. Inicializar el modelo con tu clave API
-    // IMPORTANTE: Reemplaza con una variable de entorno
-    final String apiKey = "AIzaSyBha_Lty0xq1Fxkc72POAwKTzNghJ7_0Ck";
-    final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey);
-
-    // 2. Construir el prompt con el diccionario de categorías (como definimos antes)
-
-    final String prompt = AppStrings.getPromtCategory(description);
-    try {
-      final response = await model.generateContent([Content.text(prompt)]);
-
-      debugPrint(response.text?.trim());
-      return response.text?.trim();
-      // if (jsonString != null && jsonString.isNotEmpty) {
-      //   // Intenta parsear el JSON y convertirlo a un Map
-      //   final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-      //   return EtiquetaMovimiento.fromJson(jsonMap);
-      // }
-    } catch (e) {
-      debugPrint('Error al clasificar con Gemini: $e');
-    }
-
-    return null; // Retorna nulo si hay un error
-  }
-
-  Future<void> obtenerSugerenciaDeCategoria(String descripcion) async {
-    // Aseguramos que solo haya una llamada activa
-    if (isLoading) return;
-
-    // 1. Iniciamos la carga y limpiamos la sugerencia anterior
-    setState(() {
-      isLoading = true;
-      sugerenciaGemini = null;
-    });
-
-    // 2. Llamamos a la función asíncrona
-    String? resultado = await geminiGetCategory(descripcion);
-
-    // 3. Actualizamos el estado con el resultado
-    setState(() {
-      sugerenciaGemini = resultado;
-      isLoading = false;
-    });
-  }
 
   @override
   void initState() {
@@ -103,68 +47,110 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
       appBar: TitleAppbarBack(title: appLocalizations.newTransactionTitle),
-      body: Padding(
-        padding: AppDimensions.paddingAllMedium,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 350,
-              height: 180,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: CategoriaGasto.values.length,
-                itemBuilder: (context, index) {
-                  List list = CategoriaGasto.values
-                      .map((choice) => buildGastoChips(choice))
-                      .toList();
-                  return list[index];
-                },
-                // spacing: 8.0,
-                // children: CategoriaGasto.values.map((choice) => buildGastoChips(choice)).toList(),
-              ),
-            ),
-            TextField(
-              onSubmitted: (descripcion) async {
-                // Llama a la función al presionar Enter/Done
-                await obtenerSugerenciaDeCategoria(descripcion);
-              },
-              // ... otras propiedades
-            ),
-            //_calendar(context, colorScheme, textTheme),
-            if (isLoading) const CircularProgressIndicator(),
-            if (sugerenciaGemini != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  'Sugerencia de Gemini: ${sugerenciaGemini!}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: AppDimensions.paddingAllMedium,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _calendar(context, colorScheme, textTheme),
+              SizedBox(height: AppDimensions.spacingMedium),
+              Container(
+                padding: AppDimensions.paddingHorizontalMedium,
+                decoration: decorationContainer(
+                  context: context,
+                  colorFilled: colorScheme.primaryContainer,
+                  radius: 10,
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                      minVerticalPadding: 0.0,
+                      visualDensity: VisualDensity.comfortable,
+                      //title: Text("Categoría", style: textTheme.titleSmall),
+                      title: Text(
+                        "Importe",
+                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurface),
+                      ),
+                      subtitle: Text(
+                        "55",
+                        style: textTheme.titleMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                    Divider(height: 1, color: colorScheme.outline),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                      minVerticalPadding: 0.0,
+                      visualDensity: VisualDensity.comfortable,
+                      //title: Text("Categoría", style: textTheme.titleSmall),
+                      title: Text(
+                        "Categoría",
+                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurface),
+                      ),
+                      subtitle: Text(
+                        widget.transactionModel.category.isEmpty
+                            ? "-"
+                            : widget.transactionModel.category,
+                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                    Divider(height: 1, color: colorScheme.outline),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                      minVerticalPadding: 0.0,
+                      visualDensity: VisualDensity.comfortable,
+                      //title: Text("Categoría", style: textTheme.titleSmall),
+                      title: Text(
+                        "Subcategoría",
+                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurface),
+                      ),
+                      subtitle: Text(
+                        widget.transactionModel.category.isEmpty
+                            ? "-"
+                            : widget.transactionModel.subcategory,
+                        style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            if (sugerenciaGemini != null)
-              ElevatedButton(
-                onPressed: () {
-                  // Lógica para aplicar la categoría y subcategoría a tu formulario
-                  debugPrint('Aplicando categoría: ${sugerenciaGemini!}');
-                },
-                child: const Text('Aplicar Sugerencia'),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
+      persistentFooterButtons: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30.0),
+          child: StandarButton(
+            onPressed: () {
+              widget.transactionModel = widget.transactionModel.copyWith(
+                date: _selectedDay,
+                year: _selectedDay.year,
+                month: _selectedDay.month,
+              );
+
+              //CREAR TRANSACCION EN FIREBASE
+            },
+            text: "Siguiente",
+          ),
+        ),
+      ],
+      persistentFooterDecoration: const BoxDecoration(),
     );
   }
 
   Container _calendar(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
     return Container(
+      height: 400,
       decoration: decorationContainer(
         context: context,
         colorFilled: colorScheme.primaryContainer,
         radius: 10,
       ),
       child: TableCalendar(
-        firstDay: DateTime.now().subtract(const Duration(days: 100)),
+        firstDay: DateTime.now().subtract(const Duration(days: 365 * 5)),
         lastDay: DateTime.now().add(const Duration(days: 365)), // Ampliado un año en el futuro
 
         selectedDayPredicate: (day) {
@@ -238,33 +224,6 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
             // width y height para el tamaño del marcador
           ),
         ),
-      ),
-    );
-  }
-
-  Widget buildGastoChips(CategoriaGasto choice) {
-    final bool isSelected = _selectedChoice == choice;
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: ChoiceChip(
-        labelPadding: EdgeInsets.symmetric(horizontal: 10),
-        padding: EdgeInsets.zero,
-        label: Text(choice.emoji + choice.nombre),
-        selected: isSelected,
-        selectedColor: colorScheme.primary,
-        backgroundColor: Colors.grey.shade300,
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.grey.shade800,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.all(Radius.circular(20))),
-        onSelected: (selected) {
-          // Solo actualizamos la selección si el chip fue tocado (selected es true).
-          if (selected) {
-            _updateSelection(choice);
-          }
-        },
       ),
     );
   }

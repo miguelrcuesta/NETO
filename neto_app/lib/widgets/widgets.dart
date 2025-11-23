@@ -2,7 +2,15 @@
 //PIN CODE
 //##########################################################################
 import 'package:flutter/material.dart';
+import 'package:neto_app/constants/app_enums.dart';
+import 'package:neto_app/constants/app_utils.dart';
+import 'package:neto_app/widgets/app_fields.dart';
 
+//#######################################################################
+//#######################################################################
+//CUSTOM KEYBOARDS
+//#######################################################################
+//#######################################################################
 class PinCodeWidget extends StatefulWidget {
   const PinCodeWidget({super.key});
 
@@ -297,6 +305,169 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TransactionCard extends StatefulWidget {
+  const TransactionCard({
+    super.key,
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String id;
+  final String type;
+  final String title;
+  final String subtitle;
+
+  @override
+  State<TransactionCard> createState() => _TransactionCardState();
+}
+
+class _TransactionCardState extends State<TransactionCard> {
+  dynamic getCategory(String id) {
+    if (widget.type == TransactionType.expense.id) {
+      return Expenses.getCategoryById(id);
+    } else {
+      return Incomes.getCategoryById(id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      height: 80,
+      width: double.infinity,
+      decoration: decorationContainer(
+        context: context,
+        colorFilled: colorScheme.primaryContainer,
+        radius: 10,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                child: Container(
+                  decoration: decorationContainer(
+                    context: context,
+                    colorFilled:
+                        Expenses.getCategoryById(widget.id)?.color.withAlpha(30) ??
+                        colorScheme.primary.withAlpha(30),
+                    radius: 8,
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(
+                      Expenses.getCategoryById(widget.id)?.iconData,
+                      size: 20,
+                      color: Expenses.getCategoryById(widget.id)?.color ?? colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacingMedium),
+              SizedBox(
+                width: 180,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    //Text(Expenses.getCategoryByName(id)?.nombre ?? "", style: textTheme.titleSmall),
+                    Text(
+                      widget.title,
+                      style: textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                    ),
+                    Text(
+                      widget.subtitle,
+                      style: textTheme.bodySmall!.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          Text("1.200€", style: textTheme.titleSmall),
+        ],
+      ),
+    );
+  }
+}
+
+class ReportCard extends StatelessWidget {
+  const ReportCard({super.key, required this.upText, required this.dateText});
+
+  final String upText;
+  final String dateText;
+
+  @override
+  Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      height: 80,
+      width: double.infinity,
+      decoration: decorationContainer(
+        context: context,
+        colorFilled: colorScheme.primaryContainer,
+        radius: 10,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.folder, size: 35, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: AppDimensions.spacingMedium),
+              SizedBox(
+                width: 250,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      upText,
+                      style: textTheme.titleSmall,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      dateText,
+                      style: textTheme.bodySmall!.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -64,55 +64,98 @@ class AppStrings {
   // -----------------------------------------------------
   // 6. PROMT
   // -----------------------------------------------------
-  static String categoriesPromt = """
-  GASTOS:
-    1. CASA: [Alquiler, Reparación, Muebles/Electrodomésticos, Triturador de basura, Otros]
-    2. SALUD: [Gasto en médicos, Medicamentos, Dentista, Otros]
-    3. TRANSPORTE: [Combustible, Transporte urbano/taxis, Reparación, Servicio fluidos/neumáticos, Lavado de coches, Otros]
-    4. ROPA Y CALZADO: [Ropa de adultos, Ropa de niños, Accesorios, Calzado, Otros]
-    5. SEGUROS: [Seguro de vida, Seguro de salud, Seguro de coche, Otros]
-    6. HIGIENE: [Cosmética/accesorios, Peluquería, Salón de belleza, Productos de limpieza, Otros]
-    7. DIVERSIÓN: [Cine/teatro, Gimnasio/piscina, Cursos/formación, Pasatiempo, Equipos electrónicos, Prensa/revistas, Libros, Otros]
-    8. OTROS GASTOS: [Regalos, Gato/perro, Vacaciones, Veterinario, Caridad, Otros.
+  static String palabrasClave = """
+  REGLAS DE ASOCIACIÓN DE MARCAS (ALTA PRIORIDAD):
+    Si la 'Descripción de la Transacción' contiene alguna de estas palabras clave, DEBES usar la clasificación asignada.
 
-    INGRESOS:
-    9. SALARIO: [Nómina Principal, Horas Extra, Bonificaciones, Ingresos Freelance]
-    10. INVERSIONES: [Dividendos, Intereses Bancarios, Alquiler de Propiedades, Venta de Activos]
-    11. VENTAS/NEGOCIO: [Venta de Artículos Personales, Ingresos de Negocio Propio, Comisiones, Devoluciones]
-    12. OTROS INGRESOS: [Regalos Recibidos, Devolución de Impuestos, Reembolsos, Ingresos Varios/Extraordinarios]
+    // TRANSPORTE: Combustible/Gasolina
+    - REPSOL, CEPSA O MOEVE, SHELL, BP, WAYLET -> categoria: transporte, subcategoria: Combustible/Gasolina
+
+    // TRANSPORTE: Taxi/VTC
+    - UBER, CABIFY -> categoria: transporte, subcategoria: Taxi/VTC
+
+    // ALIMENTACIÓN: Supermercado (Compras)
+    - MERCADONA, CARREFOUR, LIDL, DIA, ALDI -> categoria: alimentacion, subcategoria: Supermercado (Compras)
+
+    // ALIMENTACIÓN: Restaurantes (comer fuera)
+    - GLOVO, JUST EAT, MCDONALDS, BURGER KING, SAONA,  -> categoria: alimentacion, subcategoria: Restaurantes (comer fuera)
+
+    // SUSCRIPCIONES: Plataforma Streaming
+    - NETFLIX, SPOTIFY, DISNEY+, HBO, MOVISTAR+ -> categoria: suscripciones, subcategoria: Plataforma Streaming
+
+    // VIVIENDA: Servicios
+    - IBERDROLA, ENDESA, NATURGY, AGUA, LUZ, GAS -> categoria: vivienda, subcategoria: Servicios (Luz, Agua, Gas)
+
+    // OTROS: Retiro de efectivo
+    - CAJERO, ATM, DISPOSICION, RETIRO -> categoria: otrosGastos, subcategoria: Retiro de efectivo
+
+    DESCRIPCIÓN DE LA TRANSACCIÓN: "{Descripción de la Transacción}"
+
+    OUTPUT FORMATO ESTRICTO:
+    La respuesta DEBE ser ÚNICAMENTE el objeto JSON que contiene la categoría y la subcategoría.
+
+    Ejemplo de Salida:
+    {"categoria": "alimentacion", "subcategoria": "Supermercado (Compras)"}
 
   """;
 
   static getPromtCategory(String description) {
-    List gastos = CategoriaGasto.values
+    List gastos = Expenses.values
         .map((choice) => {"categoria": choice.nombre, "subcategoria": choice.subcategorias})
         .toList();
-    List ingresos = CategoriaGasto.values
+    List ingresos = Expenses.values
         .map((choice) => {"categoria": choice.nombre, "subcategoria": choice.subcategorias})
         .toList();
 
     List categories = gastos + ingresos;
 
     return """
-          Eres un motor de categorización de movimientos financieros.
-          Asigna la categoría principal y subcategoría más apropiada.
+                Eres un motor de categorización de movimientos financieros de alta precisión.
+        Tu ÚNICA tarea es asignar la categoría principal y subcategoría más apropiada a la descripción de una transacción, siguiendo las reglas y el formato estricto.
 
+        CATEGORÍAS Y SUBCATEGORÍAS VÁLIDAS:
+        Debes elegir las claves 'categoria' y 'subcategoria' de la siguiente lista de ENUMs.
+        ${categories.toString()}
 
-          Categorías Válidas gastos: ${categories.toString()}
+        REGLAS DE ASOCIACIÓN DE MARCAS (ALTA PRIORIDAD):
+        Si la 'Descripción del movimiento' contiene alguna de estas palabras clave, DEBES usar la clasificación asignada en las reglas a continuación:
+        $palabrasClave
 
-          Descripción del movimiento que se esta creando: $description. 
-          No sean tan estricto con el texto, muchas veces el usuario escribe rápido y se confunde por ejemplo en vez de escribir "gasolina" escribe "gasoli", se inteligente e intuye lo que quiere decir.
+        DESCRIPCIÓN DEL MOVIMIENTO: $description.
 
-          ---
-          INSTRUCCIÓN DE SALIDA ESTRICTA:
-            Debes responder ÚNICAMENTE con una estructura de datos JSON válida y completa.
-            NO INCLUYAS NINGÚN TEXTO INTRODUCTORIO, EXPLICACIÓN, CÓDIGO NI NADA ADICIONAL.
-            El formato debe ser EXACTAMENTE el siguiente, sin saltos de línea y con las claves entre comillas dobles:
-            {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
-          ---
+        ---
+        INSTRUCCIÓN DE SALIDA ESTRICTA FINAL:
+        Debes responder ÚNICAMENTE con una estructura de datos JSON válida y completa.
+        NO INCLUYAS NINGÚN TEXTO INTRODUCTORIO, EXPLICACIÓN, SALUDO, CÓDIGO NI NADA ADICIONAL (incluidos los backticks ```json o ```).
+        La respuesta debe ser UNICAMENTE el objeto JSON.
 
-          SALIDA: quiero un diccionario que sea: {categoria: <categoria>, subcategoría: <subcategoría} y 
-          pueda procesarlo en dart/flutter y sin backticks.
+        FORMATO EXACTO REQUERIDO:
+        {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
+        ---
+
+        SALIDA: {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
       """;
+    // return """
+    //       Eres un motor de categorización de movimientos financieros.
+    //       Asigna la categoría principal y subcategoría más apropiada.
+
+    //       Categorías Válidas gastos e ingresos: ${categories.toString()}
+
+    //       Descripción del movimiento que se esta creando: $description.
+    //       REGLAS:
+
+    //       Si la 'Descripción de la Transacción' contiene alguna de estas palabras clave: $palabrasClave, DEBES usar la clasificación asignada (${categories.toString()})
+
+    //       ---
+    //       INSTRUCCIÓN DE SALIDA ESTRICTA:
+    //         Debes responder ÚNICAMENTE con una estructura de datos JSON válida y completa.
+    //         NO INCLUYAS NINGÚN TEXTO INTRODUCTORIO, EXPLICACIÓN, CÓDIGO NI NADA ADICIONAL.
+    //         El formato debe ser EXACTAMENTE el siguiente, sin saltos de línea y con las claves entre comillas dobles:
+    //         {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
+    //       ---
+
+    //       SALIDA: quiero un diccionario que sea: {categoria: <categoria>, subcategoría: <subcategoría} y
+    //       pueda procesarlo en dart/flutter y sin backticks.
+    //   """;
   }
 }

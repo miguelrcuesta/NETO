@@ -1,8 +1,10 @@
-class Transaction {
+class TransactionModel {
   final String userId;
-  final String type; // 'income' (ingreso) o 'expense' (gasto)
+  final String type;
+  final String currency;
   final double amount;
   final String category;
+  final String subcategory;
   final DateTime? date;
   final int year;
   final int month;
@@ -14,12 +16,14 @@ class Transaction {
   final List<String> reportIds;
 
   // 1. Constructor Completo
-  Transaction({
+  TransactionModel({
     this.transactionId,
     required this.userId,
     required this.type,
+    required this.currency,
     required this.amount,
     required this.category,
+    required this.subcategory,
     this.date,
     required this.year,
     required this.month,
@@ -31,11 +35,13 @@ class Transaction {
   // 2. Constructor Vacío (Fácil inicialización en el UI)
   final DateTime datess = DateTime.now();
 
-  Transaction.empty({
+  TransactionModel.empty({
     this.userId = '',
     this.type = '',
+    this.currency = '',
     this.amount = 0.0,
     this.category = '',
+    this.subcategory = '',
     this.date,
     this.year = 1970,
     this.month = 1,
@@ -46,12 +52,14 @@ class Transaction {
   });
 
   // 3. Método copyWith (Para actualizar datos de forma inmutable)
-  Transaction copyWith({
+  TransactionModel copyWith({
     String? transactionId,
     String? userId,
     String? type,
+    String? currency,
     double? amount,
     String? category,
+    String? subcategory,
     DateTime? date,
     int? year,
     int? month,
@@ -59,11 +67,13 @@ class Transaction {
     String? description,
     List<String>? reportIds,
   }) {
-    return Transaction(
+    return TransactionModel(
       userId: userId ?? this.userId,
       type: type ?? this.type,
+      currency: currency ?? this.currency,
       amount: amount ?? this.amount,
       category: category ?? this.category,
+      subcategory: subcategory ?? this.subcategory,
       date: date ?? this.date,
       year: year ?? this.year,
       month: month ?? this.month,
@@ -75,16 +85,18 @@ class Transaction {
   }
 
   // 4. Serialización: Desde Firestore (Map) a Objeto Transaction
-  factory Transaction.fromMap(Map<String, dynamic> map, {String? transactionId}) {
+  factory TransactionModel.fromMap(Map<String, dynamic> map, {String? transactionId}) {
     // Convierte el Timestamp de Firestore (dynamic) a DateTime de Dart
     DateTime date = (map['date'] as dynamic).toDate();
 
-    return Transaction(
+    return TransactionModel(
       transactionId: transactionId ?? '',
       userId: map['userId'] as String? ?? 'UNKNOWN_USER',
       type: map['type'] as String? ?? 'UNKNOWN_TYPE',
+      currency: map['currency'] as String? ?? 'UNKNOWN_CURRENCY',
       amount: (map['amount'] as num? ?? 0.0).toDouble(),
       category: map['category'] as String? ?? 'UNKNOWN_CATEGORY',
+      subcategory: map['subcategory'] as String? ?? 'UNKNOWN_SUBCATEGORY',
       date: date,
       year: map['year'] as int,
       month: map['month'] as int,
@@ -99,8 +111,10 @@ class Transaction {
     return {
       'userId': userId,
       'type': type,
+      'currency': currency,
       'amount': amount,
       'category': category,
+      'subcategory': subcategory,
       // El SDK de Firebase convierte automáticamente DateTime a Timestamp
       'date': date,
       'year': year,

@@ -9,6 +9,9 @@ import 'package:neto_app/constants/app_strings.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_enums.dart'; // Asumimos que aquí están tus enums
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/models/transaction_model.dart';
+import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
+import 'package:neto_app/services/api.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -35,11 +38,12 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
   String amountString = '';
   String transactionType = TransactionType.expense.id;
   Map<String, String>? sugerenciaGemini;
-  CategoriaGasto? selectedChoiceGasto;
-  CategoriaIngreso? selectedChoiceIngreso;
+
+  final Locale currentLocale = AppFormatters.getPlatformLocale();
+
   String? subcategoryGasto;
   String? subcategoryIngreso;
-  String? selectedCategoryChoice; // ID (name) de la categoría seleccionada
+  String? selectedCategoryChoice;
   String? selectedSubcategoryChoice;
   bool isLoading = false;
   Timer? _debounceTimer;
@@ -54,56 +58,48 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
     });
   }
 
-  // Las funciones _updateSelectionGasto e _updateSelectionIngreso ya no son necesarias
-  // porque el estado se actualiza directamente en el onSelected del modal.
+  Future<void> fetchNewIACategory(String transactionDescription) async {
+    final service = TransactionService();
+    Map<String, String>? classificationResult;
 
-  void updateSelectedChoice(String categoriaName, String subcategoriaString) {
-    if (transactionType == TransactionType.expense.id) {
-      setState(() {
-        selectedCategoryChoice = categoriaName;
-        selectedSubcategoryChoice = subcategoriaString;
-      });
-    } else {
-      setState(() {
-        selectedCategoryChoice = categoriaName;
-        selectedSubcategoryChoice = subcategoriaString;
-      });
-    }
-  }
+    // El setState que inicia la carga ya debe estar en obtenerSugerenciaDeCategoria
 
-  Future<Map<String, String>?> procesarRespuesta(String jsonString) async {
     try {
-      final Map<String, dynamic> data = jsonDecode(jsonString);
-
-      final String categoria = data['categoria'].toString();
-      final String subcategoria = data['subcategoria'].toString();
-
-      return {'categoria': categoria, 'subcategoria': subcategoria};
+      debugPrint('Intentando clasificar: $transactionDescription');
+      // Usamos await en la llamada de servicio
+      classificationResult = await service.classifyGeminiTransaction(
+        transactionDescription,
+        currentLocale.languageCode,
+      );
     } catch (e) {
-      return null;
-    }
-  }
-
-  // **NOTA:** La función geminiGetCategory usa la clave de forma insegura,
-  // esto debe ser corregido con variables de entorno.
-  Future<String?> geminiGetCategory(String description) async {
-    final String apiKey = "AIzaSyBha_Lty0xq1Fxkc72POAwKTzNghJ7_0Ck";
-    final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey);
-
-    final String prompt = AppStrings.getPromtCategory(description);
-    try {
-      final response = await model.generateContent([Content.text(prompt)]);
-      debugPrint(response.text?.trim());
-      return response.text?.trim();
-    } catch (e) {
-      debugPrint('Error al clasificar con Gemini: $e');
+      // Manejo de errores de red o servicio
+      debugPrint('⚠️ Error al contactar al servicio de IA: $e');
     }
 
-    return null;
+    // 2. Ejecutamos setState para actualizar la UI con el resultado
+    setState(() {
+      isLoading = false; // Finaliza la carga
+
+      if (classificationResult != null) {
+        final category = classificationResult['categoria']!;
+        final subcategory = classificationResult['subcategoria']!;
+        final iaStatus = classificationResult['ia_status']!;
+
+        sugerenciaGemini = classificationResult;
+
+        if (iaStatus == 'SUCCESS') {
+          debugPrint('✅ Clasificación IA Exitosa: $category / $subcategory');
+          updateSelectedChoice(category, subcategory); // Asignar a los campos de la UI
+        } else {
+          debugPrint('⚠️ Clasificación IA Fallida. Estado: $iaStatus');
+        }
+      } else {
+        sugerenciaGemini = null;
+      }
+    });
   }
 
-  Future<void> obtenerSugerenciaDeCategoria(String descripcion) async {
-    Map<String, String>? output;
+  Future<void> getGeminiCategory(String descripcion) async {
     if (descripcion.isNotEmpty) {
       if (isLoading) return;
 
@@ -112,31 +108,29 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
         sugerenciaGemini = null;
       });
 
-      String? resultado = await geminiGetCategory(descripcion);
-      if (resultado != null) {
-        output = await procesarRespuesta(resultado);
-      }
-
-      setState(() {
-        sugerenciaGemini = output;
-        isLoading = false;
-        if (sugerenciaGemini != null) {
-          updateSelectedChoice(sugerenciaGemini!["categoria"]!, sugerenciaGemini!["subcategoria"]!);
-        }
-      });
+      await fetchNewIACategory(descripcion);
     }
+  }
+
+  void updateSelectedChoice(String categoriaName, String subcategoriaString) {
+    setState(() {
+      selectedCategoryChoice = categoriaName;
+      selectedSubcategoryChoice = subcategoriaString;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    TransactionModel transactionModel = TransactionModel.empty();
     final double amount = double.tryParse(amountString.replaceAll(',', '.')) ?? 0;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    final Locale currentLocale = AppFormatters.getPlatformLocale();
     final amountFormatter = AppFormatters.getLocalizedNumberFormatterByLocale(currentLocale);
     final String symbol = AppFormatters.getCurrencySymbolByLocale(currentLocale);
+
     String formattedAmount;
+
     if (amountString.isEmpty) {
       formattedAmount = amountFormatter.format(amount);
     } else if (amountString.contains('.') && amountString.split('.').length == 2) {
@@ -164,7 +158,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: AppDimensions.spacingExtraLarge),
+                const SizedBox(height: AppDimensions.spacingMedium),
                 _typetransaction(colorScheme, myTabs),
                 const SizedBox(height: AppDimensions.spacingExtraLarge),
                 _amount(formattedAmount, textTheme, amount, colorScheme, symbol),
@@ -179,6 +173,8 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                   onPressed: () {
                     debugPrint(selectedCategoryChoice.toString());
                     debugPrint(selectedSubcategoryChoice.toString());
+                    debugPrint(amount.toString());
+                    debugPrint(symbol.toString());
                   },
                   child: Text("data"),
                 ),
@@ -190,7 +186,24 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
       persistentFooterButtons: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 30.0),
-          child: StandarButton(onPressed: () {}, text: "Siguiente"),
+          child: StandarButton(
+            onPressed: () {
+              transactionModel = transactionModel.copyWith(
+                amount: amount,
+                category: selectedCategoryChoice,
+                subcategory: selectedSubcategoryChoice,
+              );
+
+              Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) =>
+                      TransactionCreateDetailsPage(transactionModel: transactionModel),
+                ),
+              );
+            },
+            text: "Siguiente",
+          ),
         ),
       ],
       persistentFooterDecoration: const BoxDecoration(),
@@ -201,7 +214,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
   // WIDGETS
   //#####################################################################################
 
-  // ⭐️ FUNCION ARREGLADA: EL onPresed DEL TextButton ES ASÍNCRONO ⭐️
   Column _geminiCategory(TextTheme textTheme, ColorScheme colorScheme) {
     // Determinar qué categoría se debe mostrar
     String displayCategory = "Sin categoría";
@@ -210,12 +222,10 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
       // Intenta obtener el nombre legible usando el getter de la extensión (asumiendo su existencia)
       if (transactionType == TransactionType.expense.id) {
         displayCategory =
-            CategoriaGasto.getCategoryByName(selectedCategoryChoice!)?.nombre ??
-            selectedCategoryChoice!;
+            Expenses.getCategoryById(selectedCategoryChoice!)?.nombre ?? selectedCategoryChoice!;
       } else {
         displayCategory =
-            CategoriaIngreso.getCategoryByName(selectedCategoryChoice!)?.nombre ??
-            selectedCategoryChoice!;
+            Incomes.getCategoryById(selectedCategoryChoice!)?.nombre ?? selectedCategoryChoice!;
       }
 
       if (selectedSubcategoryChoice != null) {
@@ -231,21 +241,21 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
             Text("Categoría", style: textTheme.titleSmall),
             TextButton(
               onPressed: () async {
-                final selectedChoice = await showModalBottomSheet(
+                await showModalBottomSheet(
                   context: context,
                   useSafeArea: true,
                   isScrollControlled: true,
                   builder: (context) {
                     return StatefulBuilder(
                       builder: (context, myState) {
-                        Widget buildIngresoChips(CategoriaIngreso choice) {
+                        Widget buildIngresoChips(Incomes choice) {
                           // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
                           // usamos la variable del state, pero no es necesario para la corrección del bug.
                           bool isSelected;
                           TextTheme textTheme = Theme.of(context).textTheme;
                           ColorScheme colorScheme = Theme.of(context).colorScheme;
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 0.0),
                             child: Column(
                               children: [
                                 Text(choice.emoji + choice.nombre, style: textTheme.titleSmall),
@@ -277,14 +287,15 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                       ),
                                       onPressed: () {
                                         myState(() {
-                                          selectedChoiceIngreso = choice;
                                           subcategoryIngreso = choice.subcategorias[index];
-                                          debugPrint(subcategoryIngreso);
+                                          updateSelectedChoice(
+                                            choice.nombre,
+                                            choice.subcategorias[index],
+                                          );
+                                          debugPrint(choice.nombre);
+                                          debugPrint(choice.subcategorias[index]);
                                         });
-                                        updateSelectedChoice(
-                                          selectedChoiceIngreso!.name,
-                                          subCategoria,
-                                        );
+
                                         //Navigator.pop(context, choice);
                                       },
                                     );
@@ -295,7 +306,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                           );
                         }
 
-                        Widget buildGastoChips(CategoriaGasto choice) {
+                        Widget buildGastoChips(Expenses choice) {
                           // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
                           // usamos la variable del state, pero no es necesario para la corrección del bug.
                           bool isSelected;
@@ -343,15 +354,15 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                       ),
                                       onPressed: () {
                                         myState(() {
-                                          selectedChoiceGasto = choice;
                                           subcategoryGasto = choice.subcategorias[index];
-                                          debugPrint(subcategoryGasto);
+                                          updateSelectedChoice(
+                                            choice.nombre,
+                                            choice.subcategorias[index],
+                                          );
+
+                                          debugPrint(choice.nombre);
+                                          debugPrint(choice.subcategorias[index]);
                                         });
-                                        updateSelectedChoice(
-                                          selectedChoiceGasto!.name,
-                                          subCategoria,
-                                        );
-                                        //Navigator.pop(context, choice);
                                       },
                                     );
                                   }),
@@ -380,7 +391,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       spacing: 8.0,
 
-                                      children: CategoriaGasto.values
+                                      children: Expenses.values
                                           .map(
                                             (categoria) => buildGastoChips(categoria),
                                           ) // Llama a la función que crea el Chip
@@ -393,7 +404,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       spacing: 8.0,
 
-                                      children: CategoriaIngreso.values
+                                      children: Incomes.values
                                           .map(
                                             (categoria) => buildIngresoChips(categoria),
                                           ) // Llama a la función que crea el Chip
@@ -410,18 +421,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                     );
                   },
                 );
-
-                if (selectedChoice != null) {
-                  setState(() {
-                    if (selectedChoice is CategoriaGasto) {
-                      transactionType = TransactionType.expense.id;
-                      updateSelectedChoice(selectedChoiceGasto!.name, "");
-                    } else if (selectedChoice is CategoriaIngreso) {
-                      transactionType = TransactionType.income.id;
-                      updateSelectedChoice(selectedChoiceIngreso!.name, "");
-                    }
-                  });
-                }
               },
               child: Text(
                 "Cambiar",
@@ -431,7 +430,8 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           ],
         ),
         ListTile(
-          //contentPadding: const EdgeInsets.symmetric(horizontal: 5.0),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+          minVerticalPadding: 0.0,
           visualDensity: VisualDensity.comfortable,
           //title: Text("Categoría", style: textTheme.titleSmall),
           title: _geminiCategorySubtitle(
@@ -498,7 +498,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           }
           if (value.isNotEmpty) {
             _debounceTimer = Timer(debounceDuration, () async {
-              await obtenerSugerenciaDeCategoria(value);
+              await getGeminiCategory(value);
             });
           }
         },
@@ -525,27 +525,31 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            formattedAmount,
-            softWrap: true,
-            overflow: TextOverflow.ellipsis,
-            style: amountString.isNotEmpty
-                ? textTheme.titleLarge!.copyWith(
-                    fontSize: AppDimensions.getFontSizeByLength(amount),
-                    fontWeight: FontWeight.bold,
-                  )
-                : textTheme.titleLarge!.copyWith(
-                    fontSize: AppDimensions.getFontSizeByLength(amount),
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-          ),
-          Text(
-            symbol,
-            style: textTheme.titleLarge!.copyWith(
-              fontSize: 30,
-              color: colorScheme.onSurfaceVariant,
+          Container(
+            alignment: Alignment.center,
+            width: 280,
+            child: Text(
+              formattedAmount,
+              softWrap: true,
+              overflow: TextOverflow.ellipsis,
+              style: amountString.isNotEmpty
+                  ? textTheme.titleLarge!.copyWith(
+                      fontSize: AppDimensions.getFontSizeByLength(amount),
+                      fontWeight: FontWeight.bold,
+                    )
+                  : textTheme.titleLarge!.copyWith(
+                      fontSize: AppDimensions.getFontSizeByLength(amount),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
             ),
           ),
+          // Text(
+          //   symbol,
+          //   style: textTheme.titleLarge!.copyWith(
+          //     fontSize: 30,
+          //     color: colorScheme.onSurfaceVariant,
+          //   ),
+          // ),
         ],
       ),
     );
@@ -564,9 +568,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           if (newValue != null) {
             setState(() {
               transactionType = newValue;
-              // Resetear la selección al cambiar el tipo (Gasto/Ingreso)
-              selectedChoiceGasto = null;
-              selectedChoiceIngreso = null;
               selectedCategoryChoice = null;
               selectedSubcategoryChoice = null;
             });
