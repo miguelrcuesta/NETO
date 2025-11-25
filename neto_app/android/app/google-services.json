@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:944006642493:android:acff88ca68a3b98a146354",
+        "mobilesdk_app_id": "1:944006642493:android:82ff0dd1e1edbbc1146354",
         "android_client_info": {
-          "package_name": "com.company.neto"
+          "package_name": "com.example.neto_app"
         }
       },
       "oauth_client": [],

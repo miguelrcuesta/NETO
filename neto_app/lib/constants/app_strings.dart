@@ -101,10 +101,10 @@ class AppStrings {
 
   static getPromtCategory(String description) {
     List gastos = Expenses.values
-        .map((choice) => {"categoria": choice.nombre, "subcategoria": choice.subcategorias})
+        .map((choice) => {"idcategoria": choice.id, "categoria": choice.nombre, "subcategoria": choice.subcategorias})
         .toList();
-    List ingresos = Expenses.values
-        .map((choice) => {"categoria": choice.nombre, "subcategoria": choice.subcategorias})
+    List ingresos = Incomes.values
+        .map((choice) => {"idcategoria": choice.id, "categoria": choice.nombre, "subcategoria": choice.subcategorias})
         .toList();
 
     List categories = gastos + ingresos;
@@ -114,7 +114,7 @@ class AppStrings {
         Tu ÚNICA tarea es asignar la categoría principal y subcategoría más apropiada a la descripción de una transacción, siguiendo las reglas y el formato estricto.
 
         CATEGORÍAS Y SUBCATEGORÍAS VÁLIDAS:
-        Debes elegir las claves 'categoria' y 'subcategoria' de la siguiente lista de ENUMs.
+        Debes elegir las claves 'idcategoria', 'categoria' y 'subcategoria' de la siguiente lista de ENUMs.
         ${categories.toString()}
 
         REGLAS DE ASOCIACIÓN DE MARCAS (ALTA PRIORIDAD):
@@ -130,32 +130,11 @@ class AppStrings {
         La respuesta debe ser UNICAMENTE el objeto JSON.
 
         FORMATO EXACTO REQUERIDO:
-        {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
+        {"idcategoria": "<categoría id asignada>","categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
         ---
 
-        SALIDA: {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
+        SALIDA: {"idcategoria": "<categoría id>", "categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
       """;
-    // return """
-    //       Eres un motor de categorización de movimientos financieros.
-    //       Asigna la categoría principal y subcategoría más apropiada.
-
-    //       Categorías Válidas gastos e ingresos: ${categories.toString()}
-
-    //       Descripción del movimiento que se esta creando: $description.
-    //       REGLAS:
-
-    //       Si la 'Descripción de la Transacción' contiene alguna de estas palabras clave: $palabrasClave, DEBES usar la clasificación asignada (${categories.toString()})
-
-    //       ---
-    //       INSTRUCCIÓN DE SALIDA ESTRICTA:
-    //         Debes responder ÚNICAMENTE con una estructura de datos JSON válida y completa.
-    //         NO INCLUYAS NINGÚN TEXTO INTRODUCTORIO, EXPLICACIÓN, CÓDIGO NI NADA ADICIONAL.
-    //         El formato debe ser EXACTAMENTE el siguiente, sin saltos de línea y con las claves entre comillas dobles:
-    //         {"categoria": "<categoría asignada>", "subcategoria": "<subcategoría asignada>"}
-    //       ---
-
-    //       SALIDA: quiero un diccionario que sea: {categoria: <categoria>, subcategoría: <subcategoría} y
-    //       pueda procesarlo en dart/flutter y sin backticks.
-    //   """;
+    
   }
 }

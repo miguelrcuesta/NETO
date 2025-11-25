@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class TransactionModel {
   final String userId;
   final String type;
@@ -92,7 +94,7 @@ class TransactionModel {
   // 4. Serialización: Desde Firestore (Map) a Objeto Transaction
   factory TransactionModel.fromMap(Map<String, dynamic> map, {String? transactionId}) {
     // Convierte el Timestamp de Firestore (dynamic) a DateTime de Dart
-    DateTime date = (map['date'] as dynamic).toDate();
+    DateTime date = (map['date'] as Timestamp).toDate();
 
     return TransactionModel(
       transactionId: transactionId ?? '',
@@ -122,7 +124,7 @@ class TransactionModel {
       'categoryid': categoryid,
       'category': category,
       'subcategory': subcategory,
-      'date': date!.toIso8601String(),
+      'date': date!,
       'year': year,
       'month': month,
       'frequency': frequency,

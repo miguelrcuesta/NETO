@@ -319,12 +319,14 @@ class TransactionCard extends StatefulWidget {
     required this.type,
     required this.title,
     required this.subtitle,
+    required this.amount,
   });
 
   final String id;
   final String type;
   final String title;
   final String subtitle;
+  final String amount;
 
   @override
   State<TransactionCard> createState() => _TransactionCardState();
@@ -350,11 +352,11 @@ class _TransactionCardState extends State<TransactionCard> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       height: 80,
       width: double.infinity,
-      decoration: decorationContainer(
-        context: context,
-        colorFilled: colorScheme.primaryContainer,
-        radius: 10,
-      ),
+      // decoration: decorationContainer(
+      //   context: context,
+      //   colorFilled: colorScheme.primaryContainer,
+      //   radius: 10,
+      // ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -370,7 +372,7 @@ class _TransactionCardState extends State<TransactionCard> {
                     colorFilled:
                         category.color.withAlpha(30) ??
                         colorScheme.primary.withAlpha(30),
-                    radius: 8,
+                    radius: 100,
                   ),
                   child: IconButton(
                     onPressed: () {
@@ -411,7 +413,7 @@ class _TransactionCardState extends State<TransactionCard> {
             ],
           ),
 
-          Text("1.200€", style: textTheme.titleSmall),
+          Text(widget.amount, style: textTheme.titleSmall),
         ],
       ),
     );

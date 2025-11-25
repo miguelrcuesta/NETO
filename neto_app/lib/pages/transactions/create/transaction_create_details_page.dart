@@ -1,8 +1,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_utils.dart';
+import 'package:neto_app/controllers/transaction_controller.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/models/transaction_model.dart';
+import 'package:neto_app/services/transactions_services.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -20,6 +22,7 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
   //#####################################################################################
   //CONTROLLERS
   //#####################################################################################
+  
 
   //#####################################################################################
   //VARIABLES
@@ -39,6 +42,7 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
 
   @override
   Widget build(BuildContext context) {
+    final TransactionController transactionController = TransactionController(service: TransactionService());
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     AppLocalizations appLocalizations = AppLocalizations.of(context)!;
@@ -103,18 +107,21 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
           ),
         ),
       ),
+
       bottomNavigationBar: Padding(
           padding: const EdgeInsets.symmetric(vertical: 30.0,horizontal: 15.0),
           child: StandarButton(
             radius: 200,
-            onPressed: () {
+            onPressed: () async{
               final updatedTransactionModel = widget.transactionModel.copyWith(
                 date: _selectedDay,
                 year: _selectedDay.year,
                 month: _selectedDay.month,
+                userId: 'MIGUEL_USER_ID'
               );
-
-              //CREAR TRANSACCION EN FIREBASE usando updatedTransactionModel
+              await transactionController.createNewTransaction( context: context, newTransaction: updatedTransactionModel);
+              if (!context.mounted) return;
+              Navigator.popUntil(context, (route) => route.isFirst);
             },
             text: "Siguiente",
           ),
@@ -122,6 +129,8 @@ class _TransactionCreateDetailsPageState extends State<TransactionCreateDetailsP
       
     );
   }
+
+  
 
   Container _calendar(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
     return Container(

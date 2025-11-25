@@ -11,7 +11,9 @@ import 'package:neto_app/constants/app_enums.dart'; // Asumimos que aquí están
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
+
 import 'package:neto_app/services/api.dart';
+
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -43,6 +45,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
 
   String? subcategoryGasto;
   String? subcategoryIngreso;
+  String? selectedCategoryId;
   String? selectedCategoryChoice;
   String? selectedSubcategoryChoice;
   bool isLoading = false;
@@ -59,7 +62,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
   }
 
   Future<void> fetchNewIACategory(String transactionDescription) async {
-    final service = TransactionService();
+    final service = ApiService();
     Map<String, String>? classificationResult;
 
     // El setState que inicia la carga ya debe estar en obtenerSugerenciaDeCategoria
@@ -81,15 +84,17 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
       isLoading = false; // Finaliza la carga
 
       if (classificationResult != null) {
+        final idCategory = classificationResult['idcategoria']!;
         final category = classificationResult['categoria']!;
         final subcategory = classificationResult['subcategoria']!;
         final iaStatus = classificationResult['ia_status']!;
 
         sugerenciaGemini = classificationResult;
+        debugPrint('Clasificación IA recibida: ${classificationResult.toString()}');
 
         if (iaStatus == 'SUCCESS') {
           debugPrint('✅ Clasificación IA Exitosa: $category / $subcategory');
-          updateSelectedChoice(category, subcategory); // Asignar a los campos de la UI
+          updateSelectedChoice(idCategory, category, subcategory); // Asignar a los campos de la UI
         } else {
           isLoading=false;
           debugPrint('⚠️ Clasificación IA Fallida. Estado: $iaStatus');
@@ -113,8 +118,9 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
     }
   }
 
-  void updateSelectedChoice(String categoriaName, String subcategoriaString) {
+  void updateSelectedChoice(String idCategory,String categoriaName, String subcategoriaString) {
     setState(() {
+      selectedCategoryId = idCategory;
       selectedCategoryChoice = categoriaName;
       selectedSubcategoryChoice = subcategoriaString;
     });
@@ -177,15 +183,27 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 30.0,horizontal: 15.0),
+      bottomNavigationBar: SafeArea(
+        bottom: true,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            15.0,
+            0.0,
+            15.0,
+            MediaQuery.of(context).viewInsets.bottom + 30.0,
+          ),
           child: StandarButton(
             radius: 200,
             onPressed: () {
+              debugPrint('StandarButton pressed on TransactionAmountCreatePage');
+
               transactionModel = transactionModel.copyWith(
                 amount: amount,
+                categoryid: selectedCategoryId,
                 category: selectedCategoryChoice,
                 subcategory: selectedSubcategoryChoice,
+                description: descriptionTransactiontextController.text.trim(),
+                type: transactionType,
               );
 
               Navigator.push<void>(
@@ -199,6 +217,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
             text: "Siguiente",
           ),
         ),
+      ),
     );
   }
 
@@ -294,6 +313,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                     myState(() {
                                       subcategoryIngreso = choice.subcategorias[index];
                                       updateSelectedChoice(
+                                        choice.id,
                                         choice.nombre,
                                         choice.subcategorias[index],
                                       );
@@ -361,10 +381,12 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                     myState(() {
                                       subcategoryGasto = choice.subcategorias[index];
                                       updateSelectedChoice(
+                                        choice.id,
                                         choice.nombre,
                                         choice.subcategorias[index],
                                       );
         
+                                      debugPrint(choice.id);
                                       debugPrint(choice.nombre);
                                       debugPrint(choice.subcategorias[index]);
                                     });

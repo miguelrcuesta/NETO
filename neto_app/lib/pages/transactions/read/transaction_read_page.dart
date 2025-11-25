@@ -3,7 +3,6 @@ import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/models/transaction_model.dart';
-import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 
 class TransactionReadPage extends StatefulWidget {

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ReportModel {
   // 1. Identificadores y Metadatos
   final String reportId;          
@@ -26,7 +28,7 @@ class ReportModel {
       'userId': userId,
       'name': name,
       'description': description,
-      'dateCreated': dateCreated.toIso8601String(), // Formato ISO 8601 para DateTime
+      'dateCreated': dateCreated, // Formato ISO 8601 para DateTime
       'listIdIncomes': listIdIncomes,
       'listIdExpenses': listIdExpenses,
     };
@@ -34,12 +36,13 @@ class ReportModel {
 
   // Método de fábrica para cargar desde la base de datos
   factory ReportModel.fromJson(Map<String, dynamic> json) {
+    DateTime dateCreated = (json['dateCreated'] as Timestamp).toDate();
     return ReportModel(
       reportId: json['reportId'] as String,
       userId: json['userId'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
-      dateCreated: DateTime.parse(json['dateCreated'] as String),
+      dateCreated: dateCreated,
       // Asegurar que las listas se carguen como List<String>
       listIdIncomes: List<String>.from(json['listIdIncomes'] as List), 
       listIdExpenses: List<String>.from(json['listIdExpenses'] as List),
