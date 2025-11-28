@@ -158,7 +158,10 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
             itemBuilder: (context, index) {
               final transaction = transactions[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 8.0,
+                ),
                 child: GestureDetector(
                   onTap: () {
                     showModalBottomSheet(
@@ -253,7 +256,10 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
             itemBuilder: (context, index) {
               final transaction = transactions[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 8.0,
+                ),
                 child: GestureDetector(
                   onTap: () {
                     showModalBottomSheet(

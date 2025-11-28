@@ -32,6 +32,7 @@ class _TransactionAmountCreatePageState
   TextEditingController descriptionTransactiontextController =
       TextEditingController();
   String? descripcion;
+  final _formKey = GlobalKey<FormState>();
 
   //#####################################################################################
   //VARIABLES
@@ -200,29 +201,46 @@ class _TransactionAmountCreatePageState
           child: Container(
             constraints: const BoxConstraints(maxWidth: 800),
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: AppDimensions.spacingSmall),
-                _typetransaction(colorScheme, myTabs),
-                const SizedBox(height: AppDimensions.spacingExtraLarge),
-                _amount(
-                  formattedAmount,
-                  textTheme,
-                  amount,
-                  colorScheme,
-                  symbol,
-                ),
-                _descriptionamount(textTheme, colorScheme),
-                const SizedBox(height: AppDimensions.spacingSmall),
-                _geminiCategory(textTheme, colorScheme),
-                const SizedBox(height: AppDimensions.spacingExtraLarge),
-                TransactionKeyBoardWidget(
-                  initialAmount: amountString,
-                  onAmountChange: _updateAmount,
-                ),
-              ],
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: AppDimensions.spacingSmall),
+                  _typetransaction(colorScheme, myTabs),
+                  const SizedBox(height: AppDimensions.spacingMedium),
+                  Container(
+                    padding: EdgeInsets.all(20.0),
+                    decoration: decorationContainer(
+                      context: context,
+                      colorFilled: colorScheme.primaryContainer,
+                      radius: 20,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _amount(
+                          formattedAmount,
+                          textTheme,
+                          amount,
+                          colorScheme,
+                          symbol,
+                        ),
+                        _descriptionamount(textTheme, colorScheme),
+                        const SizedBox(height: AppDimensions.spacingSmall),
+                        _geminiCategory(textTheme, colorScheme),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.spacingLarge),
+                  TransactionKeyBoardWidget(
+                    initialAmount: amountString,
+                    onAmountChange: _updateAmount,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -239,40 +257,39 @@ class _TransactionAmountCreatePageState
           child: StandarButton(
             radius: 200,
             onPressed: () async {
-              debugPrint(
-                'StandarButton pressed on TransactionAmountCreatePage',
-              );
+              if (_formKey.currentState?.validate() ?? false) {
+                debugPrint(
+                  'StandarButton pressed on TransactionAmountCreatePage',
+                );
 
-              transactionModel = transactionModel.copyWith(
-                amount: amount,
-                categoryid: selectedCategoryId,
-                category: selectedCategoryChoice,
-                subcategory: selectedSubcategoryChoice,
-                description: descripcion,
-                type: transactionType,
-              );
+                transactionModel = transactionModel.copyWith(
+                  amount: amount,
+                  categoryid: selectedCategoryId,
+                  category: selectedCategoryChoice,
+                  subcategory: selectedSubcategoryChoice,
+                  description: descripcion,
+                  type: transactionType,
+                );
 
-              // Show details page as a nested Cupertino modal so the whole
-              // flow (amount -> details) is presented as stacked sheets
-              // (works smoothly even when this page itself is shown as a modal).
-              await showCupertinoModalPopup<void>(
-                context: context,
-                builder: (context) {
-                  final ColorScheme cs = Theme.of(context).colorScheme;
-                  return ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                    child: Container(
-                      height: MediaQuery.of(context).size.height * 0.92,
-                      color: cs.surface,
-                      child: TransactionCreateDetailsPage(
-                        transactionModel: transactionModel,
+                await showCupertinoModalPopup<void>(
+                  context: context,
+                  builder: (context) {
+                    final ColorScheme cs = Theme.of(context).colorScheme;
+                    return ClipRRect(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
                       ),
-                    ),
-                  );
-                },
-              );
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.92,
+                        color: cs.surface,
+                        child: TransactionCreateDetailsPage(
+                          transactionModel: transactionModel,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
             },
             text: "Siguiente",
           ),
@@ -634,6 +651,12 @@ class _TransactionAmountCreatePageState
           color: colorScheme.onSurfaceVariant,
         ),
         colorFocusBorder: Colors.transparent,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'La descripción es obligatoria';
+          }
+          return null;
+        },
       ),
     );
   }

@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/controllers/reports_controller.dart';
-import 'package:neto_app/controllers/transaction_controller.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
-import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/reports/create/report_create_page.dart';
-import 'package:neto_app/pages/transactions/create/transaction_create_amount_page.dart';
-import 'package:neto_app/pages/transactions/read/transaction_read_page.dart';
-import 'package:neto_app/services/transactions_services.dart';
 import 'package:neto_app/widgets/app_bars.dart';
-// removed unused import
 import 'package:neto_app/widgets/widgets.dart';
 
 class ReportsReadPage extends StatefulWidget {
@@ -121,7 +114,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
             itemBuilder: (context, index) {
               final report = reports[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
                 child: GestureDetector(
                   onTap: () {},
                   child: ReportCard(

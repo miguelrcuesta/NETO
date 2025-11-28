@@ -169,25 +169,7 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                     ),
                   );
                 },
-              ).then((v) {
-                showCupertinoModalPopup(
-                  context: context,
-                  builder: (context) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.92,
-                        color: colorScheme.surface,
-                        child: TransactionCreateDetailsPage(
-                          transactionModel: widget.transactionModel,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              });
+              );
             },
             child: Text(
               "Editar movimiento",

@@ -15,7 +15,10 @@ OutlineInputBorder outlineInputBorder({
 }) {
   return OutlineInputBorder(
     borderRadius: BorderRadius.all(Radius.circular(radius ?? 10)),
-    borderSide: BorderSide(width: borderWidth ?? 0.0, color: colorBorder ?? Colors.transparent),
+    borderSide: BorderSide(
+      width: borderWidth ?? 0.0,
+      color: colorBorder ?? Colors.transparent,
+    ),
   );
 }
 
@@ -31,7 +34,10 @@ BoxDecoration? decorationContainer({
   return BoxDecoration(
     borderRadius: BorderRadius.all(Radius.circular(radius ?? 0)),
     color: colorFilled ?? colorScheme.surfaceBright,
-    border: Border.all(color: colorBorder ?? Colors.transparent, width: borderWidth ?? 0),
+    border: Border.all(
+      color: colorBorder ?? Colors.transparent,
+      width: borderWidth ?? 0,
+    ),
     boxShadow: boxShadow,
   );
 }
@@ -136,10 +142,12 @@ class StandarTextField extends StatelessWidget {
         contentPadding: paddingContent,
         labelText: labelText,
         labelStyle:
-            labelStyle ?? textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+            labelStyle ??
+            textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
         hintText: hintText,
         hintStyle:
-            textHintStyle ?? textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+            textHintStyle ??
+            textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
 
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
@@ -150,7 +158,9 @@ class StandarTextField extends StatelessWidget {
                 child: Text(
                   prefix ?? "",
                   softWrap: true,
-                  style: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: textTheme.bodyMedium!.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               )
             : null,
@@ -162,7 +172,9 @@ class StandarTextField extends StatelessWidget {
                 child: Text(
                   sufix ?? "",
                   softWrap: true,
-                  style: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: textTheme.bodyMedium!.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               )
             : null,
@@ -297,38 +309,24 @@ class SmallTextField extends StatelessWidget {
           fontStyle: FontStyle.italic,
         ),
 
-        border: outlineInputBorder(
-          context: context,
-          colorBorder: Colors.transparent,
-          borderWidth: 1,
-          radius: 5,
+        // Use bottom-only underline borders so only the bottom edge is visible
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.transparent, width: 1),
         ),
-        enabledBorder: outlineInputBorder(
-          context: context,
-
-          colorBorder: Colors.transparent,
-          borderWidth: 1,
-          radius: 5,
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.transparent, width: 1),
         ),
-        focusedBorder: outlineInputBorder(
-          context: context,
-          colorBorder: colorFocusBorder ?? colorScheme.primary,
-          borderWidth: 1.5,
-          radius: 5,
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: colorFocusBorder ?? colorScheme.primary,
+            width: 1.5,
+          ),
         ),
-        errorBorder: outlineInputBorder(
-          context: context,
-
-          colorBorder: Colors.transparent,
-          borderWidth: 1,
-          radius: 5,
+        errorBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.red.shade700, width: 1),
         ),
-        disabledBorder: outlineInputBorder(
-          context: context,
-
-          colorBorder: Colors.transparent,
-          borderWidth: 1,
-          radius: 5,
+        disabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.transparent, width: 1),
         ),
       ),
     );

@@ -138,7 +138,10 @@ class _TransactionCreateDetailsPageState
               newTransaction: updatedTransactionModel,
             );
             if (!context.mounted) return;
-            Navigator.popUntil(context, (route) => route.isFirst);
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).popUntil((route) => route.isFirst);
           },
           text: "Siguiente",
         ),
