@@ -30,14 +30,20 @@ class AppDimensions {
   // Padding uniforme (para usar con `padding: ` en contenedores)
   static const EdgeInsets paddingAllSmall = EdgeInsets.all(spacingSmall); // 8.0
 
-  static const EdgeInsets paddingAllMedium = EdgeInsets.all(spacingMedium); // 16.0
+  static const EdgeInsets paddingAllMedium = EdgeInsets.all(
+    spacingMedium,
+  ); // 16.0
 
   // Padding simétrico (para usar en el Scaffold o listas)
   // Horizontal estándar para la mayoría de las pantallas: 16.0
-  static const EdgeInsets paddingHorizontalMedium = EdgeInsets.symmetric(horizontal: spacingMedium);
+  static const EdgeInsets paddingHorizontalMedium = EdgeInsets.symmetric(
+    horizontal: spacingMedium,
+  );
 
   // Vertical estándar para espaciado de lista: 8.0
-  static const EdgeInsets paddingVerticalSmall = EdgeInsets.symmetric(vertical: spacingSmall);
+  static const EdgeInsets paddingVerticalSmall = EdgeInsets.symmetric(
+    vertical: spacingSmall,
+  );
 
   // Combinación estándar (16.0 horizontal, 8.0 vertical)
   static const EdgeInsets paddingStandard = EdgeInsets.symmetric(
@@ -82,7 +88,8 @@ class AppDimensions {
     final int length = numberString.length; // Ejemplo: 125.00 tiene longitud 6
 
     // 2. Definir tamaños base y umbrales.
-    const double baseSize = 55.0; // Tamaño de fuente para números cortos (ej: 1.00)
+    const double baseSize =
+        55.0; // Tamaño de fuente para números cortos (ej: 1.00)
     const double minSize = 25.0; // Tamaño de fuente mínimo.
 
     // 3. Definir los umbrales de longitud y la escala de reducción.
@@ -258,23 +265,7 @@ class AppFormatters {
   //###################################################################################
 
   static String customDateFormatShort(DateTime date) {
-    String format = "";
-
-    if (date.day == DateTime.now().day &&
-        date.month == DateTime.now().month &&
-        date.year == DateTime.now().year) {
-      format = "Hoy";
-    } else if (date.day == DateTime.now().day + 1 &&
-        date.month == DateTime.now().month &&
-        date.year == DateTime.now().year) {
-      format = "Mañana";
-    } else if (date.day == DateTime.now().day - 1 &&
-        date.month == DateTime.now().month &&
-        date.year == DateTime.now().year) {
-      format = "Ayer";
-    } else {
-      format = DateFormat.yMMMd('es').format(date);
-    }
-    return format;
+    return DateFormat.yMMMd('es').format(date);
+    ;
   }
 }

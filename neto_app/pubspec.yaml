@@ -14,7 +14,6 @@ dependencies:
   flutter_localizations: 
     sdk: flutter
   intl: ^0.20.2
-
   cupertino_icons: ^1.0.8
   flutter_gen: ^5.12.0
   google_fonts: ^6.3.2
@@ -40,6 +39,8 @@ flutter:
 
   assets:
     - assets/logos/
+    - assets/animations/
+ 
 
 
  

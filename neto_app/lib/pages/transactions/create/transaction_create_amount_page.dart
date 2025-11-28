@@ -1,19 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:neto_app/constants/app_strings.dart';
 import 'package:neto_app/constants/app_utils.dart';
-import 'package:neto_app/constants/app_enums.dart'; // Asumimos que aquí están tus enums
+import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
-
 import 'package:neto_app/services/api.dart';
-
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -22,17 +16,22 @@ import 'package:neto_app/widgets/widgets.dart';
 // Si no tienes estos métodos, DEBES implementarlos o el código fallará.
 
 class TransactionAmountCreatePage extends StatefulWidget {
-  const TransactionAmountCreatePage({super.key});
+  final TransactionModel? transactionModel;
+  const TransactionAmountCreatePage({super.key, this.transactionModel});
 
   @override
-  State<TransactionAmountCreatePage> createState() => _TransactionAmountCreatePageState();
+  State<TransactionAmountCreatePage> createState() =>
+      _TransactionAmountCreatePageState();
 }
 
-class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePage> {
+class _TransactionAmountCreatePageState
+    extends State<TransactionAmountCreatePage> {
   //#####################################################################################
   //CONTROLLERS
   //#####################################################################################
-  TextEditingController descriptionTransactiontextController = TextEditingController();
+  TextEditingController descriptionTransactiontextController =
+      TextEditingController();
+  String? descripcion;
 
   //#####################################################################################
   //VARIABLES
@@ -50,6 +49,7 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
   String? selectedSubcategoryChoice;
   bool isLoading = false;
   Timer? _debounceTimer;
+  late TransactionModel transactionModel;
 
   //#####################################################################################
   //FUNCIONES
@@ -90,13 +90,19 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
         final iaStatus = classificationResult['ia_status']!;
 
         sugerenciaGemini = classificationResult;
-        debugPrint('Clasificación IA recibida: ${classificationResult.toString()}');
+        debugPrint(
+          'Clasificación IA recibida: ${classificationResult.toString()}',
+        );
 
         if (iaStatus == 'SUCCESS') {
           debugPrint('✅ Clasificación IA Exitosa: $category / $subcategory');
-          updateSelectedChoice(idCategory, category, subcategory); // Asignar a los campos de la UI
+          updateSelectedChoice(
+            idCategory,
+            category,
+            subcategory,
+          ); // Asignar a los campos de la UI
         } else {
-          isLoading=false;
+          isLoading = false;
           debugPrint('⚠️ Clasificación IA Fallida. Estado: $iaStatus');
         }
       } else {
@@ -118,7 +124,11 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
     }
   }
 
-  void updateSelectedChoice(String idCategory,String categoriaName, String subcategoriaString) {
+  void updateSelectedChoice(
+    String idCategory,
+    String categoriaName,
+    String subcategoriaString,
+  ) {
     setState(() {
       selectedCategoryId = idCategory;
       selectedCategoryChoice = categoriaName;
@@ -127,20 +137,49 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
   }
 
   @override
+  void initState() {
+    transactionModel = widget.transactionModel ?? TransactionModel.empty();
+
+    // If an existing transaction model was provided, prefill form values so
+    // the page acts as an "edit" screen.
+    if (widget.transactionModel != null) {
+      final t = widget.transactionModel!;
+      // Prefill amount (use simple string representation; formatting happens in build)
+      amountString = t.amount.toString();
+      // Prefill description
+      descriptionTransactiontextController.text = t.description ?? '';
+      descripcion = t.description;
+      // Prefill category / subcategory
+      selectedCategoryId = t.categoryid;
+      selectedCategoryChoice = t.category;
+      selectedSubcategoryChoice = t.subcategory;
+      // Prefill type
+      transactionType = t.type;
+    }
+
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    TransactionModel transactionModel = TransactionModel.empty();
-    final double amount = double.tryParse(amountString.replaceAll(',', '.')) ?? 0;
+    final double amount =
+        double.tryParse(amountString.replaceAll(',', '.')) ?? 0;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    final amountFormatter = AppFormatters.getLocalizedNumberFormatterByLocale(currentLocale);
-    final String symbol = AppFormatters.getCurrencySymbolByLocale(currentLocale);
+    final amountFormatter = AppFormatters.getLocalizedNumberFormatterByLocale(
+      currentLocale,
+    );
+    final String symbol = AppFormatters.getCurrencySymbolByLocale(
+      currentLocale,
+    );
 
     String formattedAmount;
 
     if (amountString.isEmpty) {
       formattedAmount = amountFormatter.format(amount);
-    } else if (amountString.contains('.') && amountString.split('.').length == 2) {
+    } else if (amountString.contains('.') &&
+        amountString.split('.').length == 2) {
       formattedAmount = amountString;
       formattedAmount = amountFormatter.format(amount);
     } else {
@@ -165,10 +204,16 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: AppDimensions.spacingMedium),
+                const SizedBox(height: AppDimensions.spacingSmall),
                 _typetransaction(colorScheme, myTabs),
                 const SizedBox(height: AppDimensions.spacingExtraLarge),
-                _amount(formattedAmount, textTheme, amount, colorScheme, symbol),
+                _amount(
+                  formattedAmount,
+                  textTheme,
+                  amount,
+                  colorScheme,
+                  symbol,
+                ),
                 _descriptionamount(textTheme, colorScheme),
                 const SizedBox(height: AppDimensions.spacingSmall),
                 _geminiCategory(textTheme, colorScheme),
@@ -177,7 +222,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                   initialAmount: amountString,
                   onAmountChange: _updateAmount,
                 ),
-                
               ],
             ),
           ),
@@ -194,24 +238,40 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           ),
           child: StandarButton(
             radius: 200,
-            onPressed: () {
-              debugPrint('StandarButton pressed on TransactionAmountCreatePage');
+            onPressed: () async {
+              debugPrint(
+                'StandarButton pressed on TransactionAmountCreatePage',
+              );
 
               transactionModel = transactionModel.copyWith(
                 amount: amount,
                 categoryid: selectedCategoryId,
                 category: selectedCategoryChoice,
                 subcategory: selectedSubcategoryChoice,
-                description: descriptionTransactiontextController.text.trim(),
+                description: descripcion,
                 type: transactionType,
               );
 
-              Navigator.push<void>(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (BuildContext context) =>
-                      TransactionCreateDetailsPage(transactionModel: transactionModel),
-                ),
+              // Show details page as a nested Cupertino modal so the whole
+              // flow (amount -> details) is presented as stacked sheets
+              // (works smoothly even when this page itself is shown as a modal).
+              await showCupertinoModalPopup<void>(
+                context: context,
+                builder: (context) {
+                  final ColorScheme cs = Theme.of(context).colorScheme;
+                  return ClipRRect(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    child: Container(
+                      height: MediaQuery.of(context).size.height * 0.92,
+                      color: cs.surface,
+                      child: TransactionCreateDetailsPage(
+                        transactionModel: transactionModel,
+                      ),
+                    ),
+                  );
+                },
               );
             },
             text: "Siguiente",
@@ -233,10 +293,12 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
       // Intenta obtener el nombre legible usando el getter de la extensión (asumiendo su existencia)
       if (transactionType == TransactionType.expense.id) {
         displayCategory =
-            Expenses.getCategoryById(selectedCategoryChoice!)?.nombre ?? selectedCategoryChoice!;
+            Expenses.getCategoryById(selectedCategoryChoice!)?.nombre ??
+            selectedCategoryChoice!;
       } else {
         displayCategory =
-            Incomes.getCategoryById(selectedCategoryChoice!)?.nombre ?? selectedCategoryChoice!;
+            Incomes.getCategoryById(selectedCategoryChoice!)?.nombre ??
+            selectedCategoryChoice!;
       }
 
       if (selectedSubcategoryChoice != null) {
@@ -246,8 +308,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
 
     return Row(
       children: [
-        
-        
         Expanded(
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
@@ -282,55 +342,67 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("${choice.emoji} ${choice.nombre}", style: textTheme.titleMedium),
+                            Text(
+                              "${choice.emoji} ${choice.nombre}",
+                              style: textTheme.titleMedium,
+                            ),
                             SizedBox(height: AppDimensions.spacingMedium),
                             Wrap(
                               spacing: 8.0,
                               runSpacing: 8.0,
-                              children: List.generate(choice.subcategorias.length, (index) {
-                                String subCategoria = choice.subcategorias[index];
-                                isSelected = subcategoryIngreso == choice.subcategorias[index];
-                                return ActionChip(
-                                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.zero,
-                                  label: Text(subCategoria),
-        
-                                  backgroundColor: isSelected
-                                      ? colorScheme.primaryContainer
-                                      : colorScheme.surfaceBright,
-                                  labelStyle: TextStyle(
-                                    color: isSelected
-                                        ? colorScheme.primary
-                                        : Colors.grey.shade800,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  onPressed: () {
-                                    myState(() {
-                                      subcategoryIngreso = choice.subcategorias[index];
-                                      updateSelectedChoice(
-                                        choice.id,
-                                        choice.nombre,
-                                        choice.subcategorias[index],
-                                      );
-                                      debugPrint(choice.nombre);
-                                      debugPrint(choice.subcategorias[index]);
-                                    });
-        
-                                    //Navigator.pop(context, choice);
-                                  },
-                                );
-                              }),
+                              children: List.generate(
+                                choice.subcategorias.length,
+                                (index) {
+                                  String subCategoria =
+                                      choice.subcategorias[index];
+                                  isSelected =
+                                      subcategoryIngreso ==
+                                      choice.subcategorias[index];
+                                  return ActionChip(
+                                    labelPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    label: Text(subCategoria),
+
+                                    backgroundColor: isSelected
+                                        ? colorScheme.primaryContainer
+                                        : colorScheme.surfaceBright,
+                                    labelStyle: TextStyle(
+                                      color: isSelected
+                                          ? colorScheme.primary
+                                          : Colors.grey.shade800,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    onPressed: () {
+                                      myState(() {
+                                        subcategoryIngreso =
+                                            choice.subcategorias[index];
+                                        updateSelectedChoice(
+                                          choice.id,
+                                          choice.nombre,
+                                          choice.subcategorias[index],
+                                        );
+                                        debugPrint(choice.nombre);
+                                        debugPrint(choice.subcategorias[index]);
+                                      });
+
+                                      //Navigator.pop(context, choice);
+                                    },
+                                  );
+                                },
+                              ),
                             ),
                           ],
                         ),
                       );
                     }
-        
+
                     Widget buildGastoChips(Expenses choice) {
                       // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
                       // usamos la variable del state, pero no es necesario para la corrección del bug.
@@ -338,67 +410,86 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                       TextTheme textTheme = Theme.of(context).textTheme;
                       ColorScheme colorScheme = Theme.of(context).colorScheme;
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4.0,
+                          vertical: 4.0,
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(choice.emoji + choice.nombre, style: textTheme.titleMedium),
+                            Text(
+                              choice.emoji + choice.nombre,
+                              style: textTheme.titleMedium,
+                            ),
                             SizedBox(height: AppDimensions.spacingMedium),
                             Wrap(
                               spacing: 8.0,
                               runSpacing: 8.0,
-                              children: List.generate(choice.subcategorias.length, (index) {
-                                isSelected = subcategoryGasto == choice.subcategorias[index];
-                                String subCategoria = choice.subcategorias[index];
-        
-                                return ActionChip(
-                                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.zero,
-                                  label: Text(subCategoria),
-        
-                                  backgroundColor: isSelected
-                                      ? colorScheme.primaryContainer
-                                      : colorScheme.surface,
-                                  labelStyle: TextStyle(
-                                    color: isSelected
-                                        ? colorScheme.primary
-                                        : colorScheme.onSurface,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    side: BorderSide(
+                              children: List.generate(
+                                choice.subcategorias.length,
+                                (index) {
+                                  isSelected =
+                                      subcategoryGasto ==
+                                      choice.subcategorias[index];
+                                  String subCategoria =
+                                      choice.subcategorias[index];
+
+                                  return ActionChip(
+                                    labelPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    label: Text(subCategoria),
+
+                                    backgroundColor: isSelected
+                                        ? colorScheme.primaryContainer
+                                        : colorScheme.surface,
+                                    labelStyle: TextStyle(
                                       color: isSelected
                                           ? colorScheme.primary
-                                          : Colors.grey.shade400, // Color del borde
-                                      width: isSelected ? 1.5 : 1.0, // Grosor del borde
+                                          : colorScheme.onSurface,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                     ),
-                                  ),
-                                  onPressed: () {
-                                    myState(() {
-                                      subcategoryGasto = choice.subcategorias[index];
-                                      updateSelectedChoice(
-                                        choice.id,
-                                        choice.nombre,
-                                        choice.subcategorias[index],
-                                      );
-        
-                                      debugPrint(choice.id);
-                                      debugPrint(choice.nombre);
-                                      debugPrint(choice.subcategorias[index]);
-                                    });
-                                  },
-                                );
-                              }),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: isSelected
+                                            ? colorScheme.primary
+                                            : Colors
+                                                  .grey
+                                                  .shade400, // Color del borde
+                                        width: isSelected
+                                            ? 1.5
+                                            : 1.0, // Grosor del borde
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      myState(() {
+                                        subcategoryGasto =
+                                            choice.subcategorias[index];
+                                        updateSelectedChoice(
+                                          choice.id,
+                                          choice.nombre,
+                                          choice.subcategorias[index],
+                                        );
+
+                                        debugPrint(choice.id);
+                                        debugPrint(choice.nombre);
+                                        debugPrint(choice.subcategorias[index]);
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
                             ),
                           ],
                         ),
                       );
                     }
-        
+
                     return Scaffold(
                       appBar: TitleAppbarBack(title: "Elige una categoría"),
                       body: SingleChildScrollView(
@@ -407,7 +498,6 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                           padding: const EdgeInsets.all(16.0),
                           // Se usa mainAxisSize.min para ajustar la altura al contenido
                           child: Column(
-                             
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -417,10 +507,11 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   spacing: 8.0,
-        
+
                                   children: Expenses.values
                                       .map(
-                                        (categoria) => buildGastoChips(categoria),
+                                        (categoria) =>
+                                            buildGastoChips(categoria),
                                       ) // Llama a la función que crea el Chip
                                       .toList(),
                                 ),
@@ -430,15 +521,20 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   spacing: 8.0,
-        
+
                                   children: Incomes.values
                                       .map(
-                                        (categoria) => buildIngresoChips(categoria),
+                                        (categoria) =>
+                                            buildIngresoChips(categoria),
                                       ) // Llama a la función que crea el Chip
                                       .toList(),
                                 ),
-        
-                              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16),
+
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).viewInsets.bottom +
+                                    16,
+                              ),
                             ],
                           ),
                         ),
@@ -470,12 +566,18 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
               const Icon(CupertinoIcons.sparkles, size: 18),
               Text(
                 "Categorizando...",
-                style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
+                style: textTheme.titleSmall!.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           )
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(duration: 1500.ms, color: colorScheme.surface, blendMode: BlendMode.colorDodge)
+          .shimmer(
+            duration: 1500.ms,
+            color: colorScheme.surface,
+            blendMode: BlendMode.colorDodge,
+          )
           .fadeIn(duration: 800.ms, curve: Curves.easeOut)
           .then(delay: 100.ms)
           .fadeOut(duration: 800.ms, curve: Curves.easeIn);
@@ -488,7 +590,9 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
           const SizedBox(width: 4),
           Text(
             displayCategory,
-            style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
+            style: textTheme.titleSmall!.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       );
@@ -496,7 +600,9 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
 
     return Text(
       "Sin categoría",
-      style: textTheme.titleSmall!.copyWith(color: colorScheme.onSurfaceVariant),
+      style: textTheme.titleSmall!.copyWith(
+        color: colorScheme.onSurfaceVariant,
+      ),
     );
   }
 
@@ -515,13 +621,18 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
               await getGeminiCategory(value);
             });
           }
+          setState(() {
+            descripcion = value;
+          });
         },
         enable: true,
         controller: descriptionTransactiontextController,
         textInputType: TextInputType.text,
         hintText: "supermercado",
         textAlign: TextAlign.center,
-        textInputTheme: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+        textInputTheme: textTheme.bodyMedium!.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
         colorFocusBorder: Colors.transparent,
       ),
     );
@@ -569,7 +680,10 @@ class _TransactionAmountCreatePageState extends State<TransactionAmountCreatePag
     );
   }
 
-  SizedBox _typetransaction(ColorScheme colorScheme, Map<String, Widget> myTabs) {
+  SizedBox _typetransaction(
+    ColorScheme colorScheme,
+    Map<String, Widget> myTabs,
+  ) {
     return SizedBox(
       width: double.infinity,
       child: CupertinoSlidingSegmentedControl<String>(

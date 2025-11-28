@@ -6,8 +6,9 @@ import 'package:neto_app/models/transaction_model.dart';
 
 class TransactionService {
   // Referencia a la colección principal
-  final CollectionReference _transactionsRef = FirebaseFirestore.instance.collection('transactions');
-  
+  final CollectionReference _transactionsRef = FirebaseFirestore.instance
+      .collection('transactions');
+
   // =========================================================
   // CONSTRUCTOR DE CONSULTAS DINÁMICAS (Paginación y Filtros)
   // =========================================================
@@ -64,15 +65,15 @@ class TransactionService {
 
     // 3. Aplicar ordenación (CRUCIAL para la paginación)
     query = query.orderBy('date', descending: true);
-    
+
     // 4. Aplicar paginación (Cursor)
     if (lastDocument != null) {
       query = query.startAfterDocument(lastDocument);
     }
-    
+
     // 5. Aplicar límite de página
     query = query.limit(pageSize);
-    
+
     return query;
   }
 
@@ -81,30 +82,29 @@ class TransactionService {
   // =========================================================
 
   /// Guarda una nueva transacción en Firestore y maneja errores.
-  Future<String?> setNewTransaction(TransactionModel transaction) async {
+  Future<String?> createTransaction(TransactionModel transaction) async {
     try {
       final newDocRef = _transactionsRef.doc();
       final newTransactionId = newDocRef.id;
 
       final transactionWithId = transaction.copyWith(
         transactionId: newTransactionId,
-        date: transaction.date ?? DateTime.now(), 
+        date: transaction.date ?? DateTime.now(),
       );
-      
+
       final transactionMap = transactionWithId.toMap();
-      
+
       await newDocRef.set(transactionMap);
 
       return newTransactionId;
-      
     } on FirebaseException catch (e) {
-      debugPrint('Firebase Error al crear transacción: ${e.code} - ${e.message}');
+      debugPrint(
+        'Firebase Error al crear transacción: ${e.code} - ${e.message}',
+      );
       throw Exception('Fallo al guardar en la base de datos: ${e.message}');
-      
     } catch (e) {
       debugPrint('Error desconocido al crear transacción: $e');
       throw Exception('Error desconocido al procesar la transacción.');
     }
   }
-
 }

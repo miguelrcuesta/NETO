@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
+import 'package:neto_app/models/transaction_model.dart';
+import 'package:neto_app/pages/transactions/read/transaction_read_page.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 
 //#######################################################################
@@ -36,7 +38,11 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
         },
         child: Text(
           number.toString(),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
       ),
     );
@@ -55,7 +61,11 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
         },
         child: Text(
           coma.toString(),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
       ),
     );
@@ -111,7 +121,9 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
                   isPinVisible = !isPinVisible;
                 });
               },
-              icon: Icon(isPinVisible ? Icons.visibility_off : Icons.visibility),
+              icon: Icon(
+                isPinVisible ? Icons.visibility_off : Icons.visibility,
+              ),
             ),
 
             SizedBox(height: isPinVisible ? 50.0 : 8.0),
@@ -122,7 +134,10 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(3, (index) => numButton(1 + 3 * i + index)).toList(),
+                  children: List.generate(
+                    3,
+                    (index) => numButton(1 + 3 * i + index),
+                  ).toList(),
                 ),
               ),
 
@@ -139,11 +154,18 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
                     onPressed: () {
                       setState(() {
                         if (enteredPin.isNotEmpty) {
-                          enteredPin = enteredPin.substring(0, enteredPin.length - 1);
+                          enteredPin = enteredPin.substring(
+                            0,
+                            enteredPin.length - 1,
+                          );
                         }
                       });
                     },
-                    child: Icon(Icons.backspace, color: colorScheme.onSurface, size: 24),
+                    child: Icon(
+                      Icons.backspace,
+                      color: colorScheme.onSurface,
+                      size: 24,
+                    ),
                   ),
                 ],
               ),
@@ -156,7 +178,10 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
                   enteredPin = '';
                 });
               },
-              child: Text('Reset', style: TextStyle(fontSize: 20, color: colorScheme.onSurface)),
+              child: Text(
+                'Reset',
+                style: TextStyle(fontSize: 20, color: colorScheme.onSurface),
+              ),
             ),
           ],
         ),
@@ -176,7 +201,8 @@ class TransactionKeyBoardWidget extends StatefulWidget {
   });
 
   @override
-  State<TransactionKeyBoardWidget> createState() => _TransactionKeyBoardWidgetState();
+  State<TransactionKeyBoardWidget> createState() =>
+      _TransactionKeyBoardWidgetState();
 }
 
 class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
@@ -233,7 +259,11 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
       },
       child: Text(
         number.toString(),
-        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.normal, color: Colors.black),
+        style: const TextStyle(
+          fontSize: 21,
+          fontWeight: FontWeight.normal,
+          color: Colors.black,
+        ),
       ),
     );
   }
@@ -256,7 +286,11 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
       },
       child: Text(
         coma,
-        style: const TextStyle(fontSize: 21 , fontWeight: FontWeight.normal, color: Colors.black),
+        style: const TextStyle(
+          fontSize: 21,
+          fontWeight: FontWeight.normal,
+          color: Colors.black,
+        ),
       ),
     );
   }
@@ -276,7 +310,10 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(3, (index) => _buildNumberKey(1 + 3 * i + index)).toList(),
+                children: List.generate(
+                  3,
+                  (index) => _buildNumberKey(1 + 3 * i + index),
+                ).toList(),
               ),
             ),
 
@@ -301,7 +338,11 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
                       _updateAndNotify('');
                     }
                   },
-                  child: Icon(Icons.backspace, color: colorScheme.onSurface, size: 24),
+                  child: Icon(
+                    Icons.backspace,
+                    color: colorScheme.onSurface,
+                    size: 24,
+                  ),
                 ),
               ],
             ),
@@ -315,18 +356,20 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
 class TransactionCard extends StatefulWidget {
   const TransactionCard({
     super.key,
-    required this.id,
+    required this.idCategory,
     required this.type,
     required this.title,
     required this.subtitle,
     required this.amount,
+    required this.containerEnabled,
   });
 
-  final String id;
+  final String idCategory;
   final String type;
   final String title;
   final String subtitle;
   final String amount;
+  final bool containerEnabled;
 
   @override
   State<TransactionCard> createState() => _TransactionCardState();
@@ -346,74 +389,69 @@ class _TransactionCardState extends State<TransactionCard> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    dynamic category = getCategory(widget.id);
+    dynamic category = getCategory(widget.idCategory);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       height: 80,
       width: double.infinity,
-      // decoration: decorationContainer(
-      //   context: context,
-      //   colorFilled: colorScheme.primaryContainer,
-      //   radius: 10,
-      // ),
+      decoration: widget.containerEnabled
+          ? decorationContainer(
+              context: context,
+              colorFilled: colorScheme.primaryContainer,
+              radius: 10,
+            )
+          : null,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start, // Cambiamos a start
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                child: Container(
-                  decoration: decorationContainer(
-                    context: context,
-                    colorFilled:
-                        category.color.withAlpha(30) ??
-                        colorScheme.primary.withAlpha(30),
-                    radius: 100,
-                  ),
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: Icon(
-                      category.iconData,
-                      size: 20,
-                      color: category.color ?? colorScheme.primary,
-                    ),
-                  ),
-                ),
+          // 1. Icono (Se mantiene igual)
+          ClipRRect(
+            child: Container(
+              decoration: decorationContainer(
+                context: context,
+                colorFilled:
+                    category.color.withAlpha(30) ??
+                    colorScheme.primary.withAlpha(30),
+                radius: 100,
               ),
-              const SizedBox(width: AppDimensions.spacingMedium),
-              SizedBox(
-                width: 180,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    //Text(Expenses.getCategoryByName(id)?.nombre ?? "", style: textTheme.titleSmall),
-                    Text(
-                      widget.title,
-                      style: textTheme.titleSmall,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                    ),
-                    Text(
-                      widget.subtitle,
-                      style: textTheme.bodySmall!.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(
+                category.iconData,
+                size: 25,
+                color: category.color ?? colorScheme.primary,
               ),
-            ],
+            ),
           ),
 
-          Text(widget.amount, style: textTheme.titleSmall),
+          const SizedBox(width: AppDimensions.spacingMedium),
+
+          // 2. Título y subtítulo (Usamos Expanded para ocupar el espacio restante)
+          Expanded(
+            child: ListTile(
+              // Eliminamos el padding que ListTile aplica por defecto
+              visualDensity: VisualDensity.compact,
+              titleAlignment: ListTileTitleAlignment.top,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 1.0),
+              minVerticalPadding: 15.0,
+              title: Text(
+                widget.title,
+                style: textTheme.bodyMedium,
+                softWrap: true,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                widget.subtitle,
+                style: textTheme.bodySmall!.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                ),
+              ),
+
+              // 3. Monto (Alineación derecha gestionada por ListTile/Expanded)
+              trailing: Text(widget.amount, style: textTheme.bodyMedium),
+            ),
+          ),
         ],
       ),
     );

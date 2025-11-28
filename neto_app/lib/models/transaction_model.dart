@@ -44,8 +44,8 @@ class TransactionModel {
     this.type = '',
     this.currency = '',
     this.amount = 0.0,
-    this.categoryid = '',
-    this.category = '',
+    this.categoryid = 'OTROS',
+    this.category = 'Otros',
     this.subcategory = '',
     this.date,
     this.year = 1970,
@@ -92,7 +92,10 @@ class TransactionModel {
   }
 
   // 4. Serialización: Desde Firestore (Map) a Objeto Transaction
-  factory TransactionModel.fromMap(Map<String, dynamic> map, {String? transactionId}) {
+  factory TransactionModel.fromMap(
+    Map<String, dynamic> map, {
+    String? transactionId,
+  }) {
     // Convierte el Timestamp de Firestore (dynamic) a DateTime de Dart
     DateTime date = (map['date'] as Timestamp).toDate();
 
@@ -109,8 +112,12 @@ class TransactionModel {
       year: map['year'] as int,
       month: map['month'] as int,
       frequency: map['frequency'] as String? ?? 'UNKNOWN_FRECUENCY',
-      description: map['description'] as String? ?? 'UNKNOWN_DESCRIPTION',
-      reportIds: (map['reportIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      description: map['description'] as String?,
+      reportIds:
+          (map['reportIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 

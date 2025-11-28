@@ -66,7 +66,6 @@ enum Frecuency {
 ///#####################################################################
 ///#####################################################################
 enum Expenses {
-  // Casos (instancias) del Enum, llamando al constructor:
   vivienda(
     id: 'VIVIENDA',
     emoji: '🏠',
@@ -163,7 +162,7 @@ enum Expenses {
   ropaYAccesorios(
     id: 'ROPA',
     emoji: '👕',
-    iconData: Icons.local_offer,
+    iconData: Icons.shopping_bag_rounded,
     nombre: 'Ropa y Accesorios',
     subcategorias: ['Ropa', 'Calzado', 'Accesorios', 'Lavandería/Tintorería'],
     color: Colors.amber,
@@ -171,7 +170,7 @@ enum Expenses {
   otrosGastos(
     id: 'OTROS',
     emoji: '',
-    iconData: Icons.shopping_bag_rounded,
+    iconData: Icons.trending_down,
     nombre: 'Otros',
     subcategorias: [
       'Pago de Préstamos/Tarjetas',
@@ -217,7 +216,12 @@ enum Incomes {
     iconData: Icons.work,
     emoji: '💼',
     nombre: 'Salario',
-    subcategorias: ['Nómina Principal', 'Horas Extra', 'Bonificaciones', 'Ingresos Freelance'],
+    subcategorias: [
+      'Nómina Principal',
+      'Horas Extra',
+      'Bonificaciones',
+      'Ingresos Freelance',
+    ],
     color: Colors.lightGreen,
   ),
   inversiones(
@@ -249,9 +253,9 @@ enum Incomes {
   ),
   otros(
     id: 'OTROS',
-    iconData: Icons.arrow_downward,
+    iconData: Icons.trending_up,
     emoji: '',
-    nombre: 'Otros Ingresos',
+    nombre: 'Otros',
     subcategorias: [
       'Regalos Recibidos',
       'Devolución de Impuestos',
@@ -372,6 +376,8 @@ class Currency {
     final List<dynamic> jsonList = jsonDecode(_currenciesJsonString);
 
     // Mapea la lista de Maps a una lista de objetos Currency.
-    return jsonList.map((jsonMap) => Currency.fromJson(jsonMap as Map<String, dynamic>)).toList();
+    return jsonList
+        .map((jsonMap) => Currency.fromJson(jsonMap as Map<String, dynamic>))
+        .toList();
   }
 }
