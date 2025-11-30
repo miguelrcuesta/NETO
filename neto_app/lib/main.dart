@@ -5,6 +5,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:neto_app/firebase_options.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/pages/home/home.dart';
+import 'package:neto_app/pages/reports/read/report_read_page.dart';
 import 'package:neto_app/pages/reports/read/reports_read_page.dart';
 import 'package:neto_app/pages/transactions/read/transactions_read_page.dart';
 import 'package:neto_app/theme/theme.dart';
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
       title: 'NETO',
       theme: CustomLightTheme.lightThemeData(),
       home: const MyHomePage(),
+      //home: ReportReadPage(),
     );
   }
 }
@@ -49,19 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<Widget> _widgetOptions = <Widget>[
     const HomePage(),
     TransactionsReadPage(),
-    const ReportsReadPage(),
-
-    // Contenido para el índice 2: Informes
-    Center(
-      child: Text(
-        'Página: 2 (Informes)',
-        style: const TextStyle(
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    ),
+    const ReportsReadPage(showAppBar: true),
 
     // Contenido para el índice 3: Perfil
     Center(
@@ -81,19 +71,19 @@ class _MyHomePageState extends State<MyHomePage> {
     TextTheme textTheme = Theme.of(context).textTheme;
     AppLocalizations appLocalizations = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.primaryContainer,
       // body: _widgetOptions.elementAt(_selectedIndex),
       body: IndexedStack(
         index: _selectedIndex, // Usa el índice seleccionado
         children: _widgetOptions, // Pasa la lista COMPLETA de widgets
       ),
       bottomNavigationBar: Container(
-        color: colorScheme.surface,
+        color: colorScheme.primaryContainer,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
           child: GNav(
             color: colorScheme.onSurface,
-            backgroundColor: colorScheme.surface,
+            backgroundColor: colorScheme.primaryContainer,
             activeColor: colorScheme.primary,
             tabBackgroundColor: colorScheme.primary.withAlpha(70),
             gap: 8,

@@ -1,6 +1,7 @@
 //##########################################################################
 //PIN CODE
 //##########################################################################
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
@@ -356,20 +357,20 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
 class TransactionCard extends StatefulWidget {
   const TransactionCard({
     super.key,
+    required this.isSelected,
     required this.idCategory,
     required this.type,
     required this.title,
     required this.subtitle,
     required this.amount,
-    required this.containerEnabled,
   });
 
+  final bool isSelected;
   final String idCategory;
   final String type;
   final String title;
   final String subtitle;
   final String amount;
-  final bool containerEnabled;
 
   @override
   State<TransactionCard> createState() => _TransactionCardState();
@@ -391,38 +392,48 @@ class _TransactionCardState extends State<TransactionCard> {
 
     dynamic category = getCategory(widget.idCategory);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      height: 80,
-      width: double.infinity,
-      decoration: widget.containerEnabled
-          ? decorationContainer(
-              context: context,
-              colorFilled: colorScheme.primaryContainer,
-              radius: 10,
-            )
-          : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start, // Cambiamos a start
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 1. Icono (Se mantiene igual)
-          ClipRRect(
-            child: Container(
-              decoration: decorationContainer(
-                context: context,
-                colorFilled:
-                    category.color.withAlpha(30) ??
-                    colorScheme.primary.withAlpha(30),
-                radius: 100,
-              ),
-              child: Icon(
-                category.iconData,
-                size: 25,
-                color: category.color ?? colorScheme.primary,
-              ),
-            ),
-          ),
+          widget.isSelected == false
+              ? ClipRRect(
+                  child: Container(
+                    width: 45,
+                    height: 45,
+                    decoration: decorationContainer(
+                      context: context,
+                      colorFilled:
+                          category.color.withAlpha(30) ??
+                          colorScheme.primary.withAlpha(30),
+                      radius: 100,
+                    ),
+                    child: Icon(
+                      category.iconData,
+                      size: 25,
+                      color: category.color ?? colorScheme.primary,
+                    ),
+                  ),
+                )
+              : ClipRRect(
+                  child: Container(
+                    width: 45,
+                    height: 45,
+                    decoration: decorationContainer(
+                      context: context,
+                      colorFilled: colorScheme.primary.withAlpha(30),
+                      radius: 100,
+                    ),
+                    child: Icon(
+                      Icons.check,
+                      size: 25,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
 
           const SizedBox(width: AppDimensions.spacingMedium),
 
@@ -453,6 +464,114 @@ class _TransactionCardState extends State<TransactionCard> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class TransactionCardSmall extends StatefulWidget {
+  const TransactionCardSmall({
+    super.key,
+    required this.isSelected,
+    required this.idCategory,
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    required this.amount,
+  });
+
+  final bool isSelected;
+  final String idCategory;
+  final String type;
+  final String? title;
+  final String? subtitle;
+  final String amount;
+
+  @override
+  State<TransactionCardSmall> createState() => _TransactionCardSmallState();
+}
+
+class _TransactionCardSmallState extends State<TransactionCardSmall> {
+  dynamic getCategory(String id) {
+    if (widget.type == TransactionType.expense.id) {
+      return Expenses.getCategoryById(id);
+    } else {
+      return Incomes.getCategoryById(id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+
+    dynamic category = getCategory(widget.idCategory);
+    String? subtitle =
+        widget.subtitle ?? category.getCategoryById(widget.idCategory)?.nombre;
+
+    return Container(
+      decoration: decorationContainer(
+        context: context,
+        radius: 10,
+        colorBorder: widget.isSelected
+            ? colorScheme.primary
+            : Colors.transparent,
+        colorFilled: widget.isSelected
+            ? colorScheme.primary.withAlpha(10)
+            : Colors.transparent,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+      child: CupertinoListTile(
+        padding: EdgeInsets.only(left: 10, right: 15),
+        leading: widget.isSelected == false
+            ? ClipRRect(
+                child: Container(
+                  width: 45,
+                  height: 45,
+                  decoration: decorationContainer(
+                    context: context,
+                    colorFilled:
+                        category.color.withAlpha(30) ??
+                        colorScheme.primary.withAlpha(30),
+                    radius: 100,
+                  ),
+                  child: Icon(
+                    category.iconData,
+                    size: 15,
+                    color: category.color ?? colorScheme.primary,
+                  ),
+                ),
+              )
+            : ClipRRect(
+                child: Container(
+                  width: 45,
+                  height: 45,
+                  decoration: decorationContainer(
+                    context: context,
+                    colorFilled: colorScheme.primary.withAlpha(90),
+                    radius: 100,
+                  ),
+                  child: Icon(
+                    Icons.check,
+                    size: 25,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+
+        title: Text(
+          widget.title ?? category.name,
+          style: textTheme.bodySmall!.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        subtitle: Text(
+          subtitle ?? "Sin descripción",
+          style: textTheme.bodySmall!.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: Text(widget.amount, style: textTheme.bodyMedium),
       ),
     );
   }

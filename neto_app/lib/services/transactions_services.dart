@@ -77,6 +77,55 @@ class TransactionService {
     return query;
   }
 
+  Future<List<TransactionModel>> getTransactionsByIds(
+    List<String> transactionIds,
+  ) async {
+    if (transactionIds.isEmpty) {
+      return [];
+    }
+
+    const int batchSize = 10;
+    List<Future<QuerySnapshot>> futures = [];
+
+    // ... (Lógica de división en lotes y Future.wait - NO REQUIERE CAMBIOS) ...
+
+    for (int i = 0; i < transactionIds.length; i += batchSize) {
+      final end = (i + batchSize < transactionIds.length)
+          ? i + batchSize
+          : transactionIds.length;
+      final batchIds = transactionIds.sublist(i, end);
+
+      futures.add(
+        _transactionsRef.where(FieldPath.documentId, whereIn: batchIds).get(),
+      );
+    }
+
+    final List<QuerySnapshot> snapshots = await Future.wait(futures);
+
+    // 4. Aplanar resultados con MANEJO DE ERRORES para cada documento
+    List<TransactionModel> transactions = [];
+
+    for (var snapshot in snapshots) {
+      for (var doc in snapshot.docs) {
+        try {
+          // ⚠️ Intentar parsear el documento ⚠️
+          transactions.add(
+            TransactionModel.fromMap(doc.data() as Map<String, dynamic>),
+          );
+        } catch (e, stackTrace) {
+          // Si el parsing falla, registra el error y salta al siguiente documento
+          debugPrint('Error al parsear la transacción con ID ${doc.id}: $e');
+          debugPrint('Stack Trace: $stackTrace');
+
+          // El 'continue' implícito dentro del catch permite que el bucle
+          // pase al siguiente 'doc' sin interrumpir el proceso.
+        }
+      }
+    }
+
+    return transactions;
+  }
+
   // =========================================================
   // ESCRITURA DE DATOS (Set New Transaction)
   // =========================================================
@@ -105,6 +154,59 @@ class TransactionService {
     } catch (e) {
       debugPrint('Error desconocido al crear transacción: $e');
       throw Exception('Error desconocido al procesar la transacción.');
+    }
+  }
+
+  // =========================================================
+  // ACTUALIZAR DATOS (Update Transaction)
+  // =========================================================
+
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    try {
+      final newDocRef = _transactionsRef.doc(transaction.transactionId);
+      await newDocRef.set(transaction.toMap());
+    } on FirebaseException catch (e) {
+      debugPrint(
+        'Firebase Error al actualizar transacción: ${e.code} - ${e.message}',
+      );
+      throw Exception('Fallo al guardar en la base de datos: ${e.message}');
+    } catch (e) {
+      debugPrint('Error desconocido al actualizar transacción: $e');
+      throw Exception('Error desconocido al procesar la transacción.');
+    }
+  }
+
+  // =========================================================
+  // ELIMINAR DATOS (Update Transaction)
+  // =========================================================
+  Future<void> deleteTransaction(String id) async {
+    try {
+      final newDocRef = _transactionsRef.doc(id);
+      await newDocRef.delete();
+    } on FirebaseException catch (e) {
+      debugPrint(
+        'Firebase Error al eliminar transacción: ${e.code} - ${e.message}',
+      );
+      throw Exception('Fallo al eliminar en la base de datos: ${e.message}');
+    } catch (e) {
+      debugPrint('Error desconocido al eliminar transacción: $e');
+      throw Exception('Error desconocido al eliminar la transacción.');
+    }
+  }
+
+  Future<void> deleteMultipleTransactions(List<String> transactionIds) async {
+    try {
+      for (int i = 0; i < transactionIds.length; i++) {
+        deleteTransaction(transactionIds[i]);
+      }
+    } on FirebaseException catch (e) {
+      debugPrint(
+        'Firebase Error al eliminar las transaciones: ${e.code} - ${e.message}',
+      );
+      throw Exception('Fallo al eliminar en la base de datos: ${e.message}');
+    } catch (e) {
+      debugPrint('Error desconocido al eliminar las transaciones: $e');
+      throw Exception('Error desconocido al eliminar las transaciones.');
     }
   }
 }

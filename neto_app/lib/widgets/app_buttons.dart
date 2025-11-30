@@ -34,18 +34,22 @@ class SimpleCircleButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: backgroundColor, // Asigna el color de fondo aquí
-            // border: boxBorder ?? Border.all(color: colorScheme.outlineVariant, width: 1.5),
+            border:
+                boxBorder ??
+                Border.all(color: colorScheme.outlineVariant, width: 1.5),
           ),
           child: Center(
-            child: Icon(icon, size: iconSize, color: iconColor ?? colorScheme.surface),
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: iconColor ?? colorScheme.surface,
+            ),
           ),
         ),
       ),
     );
   }
 }
-
-class CupertinoColors {}
 
 class StandarButton extends StatelessWidget {
   final void Function()? onPressed;
@@ -85,6 +89,7 @@ class StandarButton extends StatelessWidget {
           padding: EdgeInsets.zero,
           backgroundColor: backgroundColor ?? colorScheme.primary,
           minimumSize: Size(width ?? double.infinity, height ?? 45),
+
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius ?? 4.0),
             //borderRadius: AppDimensions.standardBorderRadius,

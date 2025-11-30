@@ -51,14 +51,20 @@ class CustomLightTheme {
       backgroundColor: lightScheme().surface,
       landscapeLayout: BottomNavigationBarLandscapeLayout.linear,
       type: BottomNavigationBarType.fixed,
-      selectedIconTheme: IconThemeData(color: lightScheme().onSurface, size: 25),
+      selectedIconTheme: IconThemeData(
+        color: lightScheme().onSurface,
+        size: 25,
+      ),
       selectedItemColor: lightScheme().onSurface,
       selectedLabelStyle: TextStyle(
         fontSize: 12,
         color: lightScheme().onSurface,
         fontWeight: FontWeight.bold,
       ),
-      unselectedIconTheme: IconThemeData(color: lightScheme().onSurfaceVariant, size: 25),
+      unselectedIconTheme: IconThemeData(
+        color: lightScheme().onSurfaceVariant,
+        size: 25,
+      ),
       unselectedItemColor: lightScheme().onSurfaceVariant,
       unselectedLabelStyle: TextStyle(
         fontSize: 12,
@@ -80,11 +86,11 @@ class CustomLightTheme {
   static AppBarTheme lightAppBarTheme() {
     return AppBarTheme(
       toolbarHeight: 50,
-      surfaceTintColor: lightScheme().surface,
-      backgroundColor: lightScheme().surface,
+      surfaceTintColor: lightScheme().primaryContainer,
+      backgroundColor: lightScheme().primaryContainer,
       titleTextStyle: TextStyle(
         fontSize: 18,
-        color: lightScheme().onSurface,
+        color: lightScheme().onPrimaryContainer,
         fontWeight: FontWeight.w500,
       ),
       centerTitle: true,

@@ -1,11 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:neto_app/models/reports_model.dart';
+import 'package:neto_app/models/transaction_model.dart';
+import 'package:neto_app/services/transactions_services.dart';
 
 class ReportsService {
   final CollectionReference _reportsRef = FirebaseFirestore.instance.collection(
     'reports',
   );
+
+  final TransactionService _transactionService = TransactionService();
+
+  // =========================================================
+  // LECTURA DE DATOS
+  // =========================================================
+  Future<ReportModel?> getReportById(String reportId) async {
+    final docSnapshot = await _reportsRef.doc(reportId).get();
+
+    if (docSnapshot.exists && docSnapshot.data() != null) {
+      return ReportModel.fromJson(docSnapshot.data() as Map<String, dynamic>);
+    }
+    return null;
+  }
 
   Query getReports({
     String? userId,
@@ -50,10 +66,43 @@ class ReportsService {
     return query;
   }
 
-  /// Crea un nuevo informe en Firestore con un ID de documento generado automáticamente.
-  ///
-  /// Este método es solo para CREAR, asumiendo que el ReportModel que recibe
-  /// aún no tiene un reportId de Firestore.
+  Future<List<TransactionModel>> getAllTransactionsFromReport({
+    required String reportId,
+  }) async {
+    // 1. OBTENER EL REPORTE
+    final ReportModel? report = await getReportById(reportId);
+
+    if (report == null) {
+      throw Exception('Report document with ID $reportId not found');
+    }
+
+    // 2. PREPARAR TODOS LOS IDs
+    // Se invierte la lista si quieres ver los movimientos más recientes primero.
+    final allTransactionIds = report.listIdTransactions.reversed.toList();
+
+    // 3. OBTENER LOS MODELOS DE TRANSACCIÓN REALES
+    if (allTransactionIds.isEmpty) {
+      return [];
+    }
+
+    // Llamamos al servicio eficiente (maneja el whereIn y el batching de 10)
+    List<TransactionModel> transactions = await _transactionService
+        .getTransactionsByIds(allTransactionIds);
+
+    // 4. Asegurar el orden basado en la lista de IDs del reporte
+    transactions.sort((a, b) {
+      return allTransactionIds
+          .indexOf(a.transactionId!)
+          .compareTo(allTransactionIds.indexOf(b.transactionId!));
+    });
+
+    // 5. DEVOLVER LA LISTA SIMPLE
+    return transactions;
+  }
+
+  // =========================================================
+  // ESCRITURA DE DATOS
+  // =========================================================
   Future<void> createReport(ReportModel report) async {
     try {
       final newDocRef = _reportsRef.doc();
@@ -80,12 +129,22 @@ class ReportsService {
     }
   }
 
-  // Si necesitas actualizar el informe, sería un método separado:
+  // =========================================================
+  // ACTUALIZAR DE DATOS
+  // =========================================================
 
   Future<void> updateReport(ReportModel report) async {
     if (report.reportId.isEmpty) {
       throw ArgumentError('El ReportModel debe tener un ID para actualizar.');
     }
     await _reportsRef.doc(report.reportId).update(report.toJson());
+  }
+
+  // =========================================================
+  // ELIMINAT DATOS
+  // =========================================================
+
+  Future<void> deleteReport(String id) async {
+    await _reportsRef.doc(id).delete();
   }
 }

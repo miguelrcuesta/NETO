@@ -22,18 +22,19 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   // CONTROLLERS
   //########################################################################
   TextEditingController nameReportController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   //########################################################################
   // FUNCIONES
   //########################################################################
   String? nameReportValidator(String? value) {
     // 1. Comprueba si el valor es nulo (siempre devuelve nulo si el campo es nulo)
     if (value == null) {
-      return 'Este campo es obligatorio.';
+      return 'El nombre del informe es obligatorio.';
     }
 
     // 2. Comprueba si el valor está vacío (después de eliminar espacios en blanco)
     if (value.trim().isEmpty) {
-      return 'El campo no puede estar vacío.';
+      return 'El nombre del informe es obligatorio.';
     }
 
     // 3. Si el valor es válido, devuelve null.
@@ -49,44 +50,52 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     return Container(
       height: 300,
       padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 50),
-      child: Column(
-        children: [
-          Text("Crea un nuevo informe", style: textTheme.titleSmall),
-          const SizedBox(height: 30),
-          StandarTextField(
-            controller: nameReportController,
-            validator: nameReportValidator,
-            filled: true,
-            filledColor: colorScheme.surface,
-            enable: true,
-            hintText: "Título del informe",
-            textInputAction: TextInputAction.done,
-          ),
-          Spacer(),
-          StandarButton(
-            onPressed: () async {
-              debugPrint("Crear informe: ${nameReportController.text}");
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Text("Crea un nuevo informe", style: textTheme.titleSmall),
+            const SizedBox(height: 30),
+            StandarTextField(
+              controller: nameReportController,
+              validator: nameReportValidator,
+              filled: true,
+              filledColor: colorScheme.surface,
+              enable: true,
+              hintText: "Título del informe",
+              textInputAction: TextInputAction.done,
+            ),
+            Spacer(),
+            StandarButton(
+              onPressed: () async {
+                // Validate the form before creating the report
+                if (!(_formKey.currentState?.validate() ?? false)) {
+                  debugPrint('ReportCreatePage: name field validation failed');
+                  return;
+                }
+                debugPrint("Crear informe: ${nameReportController.text}");
 
-              ReportModel reportModel = ReportModel.empty();
+                ReportModel reportModel = ReportModel.empty();
 
-              reportModel = reportModel.copyWith(
-                name: nameReportController.text.trim(),
-                dateCreated: DateTime.now(),
-              );
+                reportModel = reportModel.copyWith(
+                  name: nameReportController.text.trim(),
+                  dateCreated: DateTime.now(),
+                );
 
-              await reportsController.createReport(
-                context: context,
-                report: reportModel,
-              );
+                await reportsController.createReport(
+                  context: context,
+                  report: reportModel,
+                );
 
-              if (!context.mounted) return;
-              nameReportController.dispose();
-              Navigator.pop(context);
-            },
-            text: "Crear informe",
-            radius: 50,
-          ),
-        ],
+                if (!context.mounted) return;
+                nameReportController.dispose();
+                Navigator.pop(context);
+              },
+              text: "Crear informe",
+              radius: 50,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/controllers/reports_controller.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/models/reports_model.dart';
+import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/reports/create/report_create_page.dart';
+import 'package:neto_app/pages/reports/read/report_read_page.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/widgets.dart';
 
 class ReportsReadPage extends StatefulWidget {
-  final ReportCard? reportModel;
-  const ReportsReadPage({super.key, this.reportModel});
+  final bool showAppBar;
+  final ReportModel? reportModel;
+  const ReportsReadPage({
+    super.key,
+    this.reportModel,
+    required this.showAppBar,
+  });
 
   @override
   State<ReportsReadPage> createState() => _ReportsReadPageState();
@@ -16,6 +24,7 @@ class ReportsReadPage extends StatefulWidget {
 
 class _ReportsReadPageState extends State<ReportsReadPage>
     with SingleTickerProviderStateMixin {
+  late Future<PaginatedReportResult> futureReports;
   //########################################################################
   // CONTROLLERS
   //########################################################################
@@ -26,9 +35,15 @@ class _ReportsReadPageState extends State<ReportsReadPage>
   // FUNCIONES
   //########################################################################
 
+  void _refreshAllData() {
+    setState(() {
+      futureReports = _initLoadReports();
+    });
+  }
+
   ///Si el índice es 0, carga gastos; si es 1, carga ingresos.
-  Future<PaginatedReportResult> _initLoadReports(int index) async {
-    debugPrint('Cargando reportes para el índice: $index');
+  Future<PaginatedReportResult> _initLoadReports() async {
+    debugPrint('Cargando informes');
     return await reportController.getReportsPaginated();
   }
 
@@ -37,6 +52,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
   //########################################################################
   @override
   void initState() {
+    futureReports = _initLoadReports();
     super.initState();
   }
 
@@ -47,7 +63,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
     TextTheme textTheme = Theme.of(context).textTheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: TitleAppbar(title: "Movimientos"),
+      appBar: widget.showAppBar ? TitleAppbar(title: "Informes") : null,
       body: Padding(
         padding: AppDimensions.paddingStandard,
         child: _buildFutureReports(),
@@ -55,11 +71,13 @@ class _ReportsReadPageState extends State<ReportsReadPage>
       floatingActionButton: ClipOval(
         child: FloatingActionButton(
           onPressed: () async {
-            showModalBottomSheet(
+            await showModalBottomSheet(
               backgroundColor: colorScheme.primaryContainer,
               context: context,
               builder: (context) => ReportCreatePage(),
             );
+
+            _refreshAllData();
           },
           backgroundColor: colorScheme.primary,
           child: Icon(Icons.add, color: colorScheme.onPrimary),
@@ -73,7 +91,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     return FutureBuilder(
-      future: _initLoadReports(0),
+      future: futureReports,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -116,7 +134,15 @@ class _ReportsReadPageState extends State<ReportsReadPage>
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5.0),
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (BuildContext context) =>
+                            ReportReadPage(reportModel: report),
+                      ),
+                    );
+                  },
                   child: ReportCard(
                     upText: report.name,
                     dateText: AppFormatters.customDateFormatShort(

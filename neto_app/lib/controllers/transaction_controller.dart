@@ -20,29 +20,17 @@ class TransactionController {
 
   TransactionController() : _transactionService = TransactionService();
 
-  // Emite la lista completa acumulada de transacciones.
-  final _transactionsController =
-      StreamController<List<TransactionModel>>.broadcast();
-  Stream<List<TransactionModel>> get transactionsStream =>
-      _transactionsController.stream;
-
-  // Usa BehaviorSubject: emite el último valor a nuevos suscriptores y permite acceder al valor actual (.value)
-  final _isLoadingController = BehaviorSubject<bool>.seeded(false);
-  Stream<bool> get isLoading => _isLoadingController.stream;
-  bool get isLoadingValue =>
-      _isLoadingController.value; // ⭐️ El getter corregido ⭐️
-
   // =========================================================
   // ESTADO INTERNO
   // =========================================================
 
-  final List<TransactionModel> _transactions = [];
-  bool hasMoreData = true;
+  final List<String> transactionsSelected = [];
+
   final int _pageSize = 20;
   final String _currentUserId = 'MIGUEL_USER_ID';
 
   // =========================================================
-  // LÓGICA DE CARGA DE DATOS (Paginación)
+  // LLAMADAS AL SERVICES
   // =========================================================
 
   /// Carga la siguiente página de transacciones y actualiza el Stream.
@@ -92,10 +80,6 @@ class TransactionController {
     }
   }
 
-  // =========================================================
-  // LÓGICA DE CREACIÓN DE DATOS
-  // =========================================================
-
   Future<void> createNewTransaction({
     required BuildContext context,
     required TransactionModel newTransaction,
@@ -104,14 +88,6 @@ class TransactionController {
       final newId = await _transactionService.createTransaction(newTransaction);
 
       if (newId != null) {
-        final savedTransaction = newTransaction.copyWith(
-          transactionId: newId,
-          date: newTransaction.date ?? DateTime.now(),
-        );
-
-        // Insertar al inicio y emitir la lista actualizada
-        _transactions.insert(0, savedTransaction);
-        _transactionsController.sink.add(List.from(_transactions));
         if (!context.mounted) return;
         ScaffoldMessenger.of(
           context,
@@ -122,6 +98,96 @@ class TransactionController {
       ScaffoldMessenger.of(context).showSnackBar(
         AppSnackbars.error(message: "Error al crear el movimiento"),
       );
+    }
+  }
+
+  Future<void> updateTransaction({
+    required BuildContext context,
+    required TransactionModel newTransaction,
+  }) async {
+    try {
+      await _transactionService.updateTransaction(newTransaction);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackbars.success(message: '¡Movimiento guardado!'));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbars.error(message: "Error al actualizar el movimiento"),
+      );
+    }
+  }
+
+  Future<void> deleteTransaction({
+    required BuildContext context,
+    required String id,
+  }) async {
+    try {
+      await _transactionService.deleteTransaction(id);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackbars.success(message: '¡Movimiento eliminado!'));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbars.error(message: "Error al eliminar el movimiento"),
+      );
+    }
+  }
+
+  Future<void> deletemultipleTransactions({
+    required BuildContext context,
+  }) async {
+    try {
+      if (transactionsSelected.isNotEmpty) {
+        await _transactionService.deleteMultipleTransactions(
+          transactionsSelected,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          AppSnackbars.warning(message: 'Selecciona para poder eliminar'),
+        );
+      }
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackbars.success(message: '¡Movimientos eliminados!'));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbars.error(message: "Error al eliminar los movimientos"),
+      );
+    }
+  }
+
+  // =========================================================
+  // FUNCIONES
+  // =========================================================
+
+  bool transactionAlreadySelected(String id) {
+    if (transactionsSelected.contains(id)) {
+      return true;
+    }
+    return false;
+  }
+
+  void selectTransactionAction(TransactionModel transaction) {
+    //Si no existe se añade
+    if (transactionAlreadySelected(transaction.transactionId!) == false) {
+      transactionsSelected.add(transaction.transactionId!);
+      debugPrint("Añadido: ${transaction.description} - ${transaction.amount}");
+      debugPrint(transactionsSelected.toString());
+    } else {
+      transactionsSelected.remove(transaction.transactionId!);
+      debugPrint(
+        "Eliminado: ${transaction.description} - ${transaction.amount}",
+      );
+      debugPrint(transactionsSelected.toString());
     }
   }
 }

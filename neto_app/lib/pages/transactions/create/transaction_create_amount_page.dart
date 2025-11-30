@@ -16,8 +16,13 @@ import 'package:neto_app/widgets/widgets.dart';
 // Si no tienes estos métodos, DEBES implementarlos o el código fallará.
 
 class TransactionAmountCreatePage extends StatefulWidget {
+  final bool isEditable;
   final TransactionModel? transactionModel;
-  const TransactionAmountCreatePage({super.key, this.transactionModel});
+  const TransactionAmountCreatePage({
+    super.key,
+    this.transactionModel,
+    required this.isEditable,
+  });
 
   @override
   State<TransactionAmountCreatePage> createState() =>
@@ -140,10 +145,7 @@ class _TransactionAmountCreatePageState
   @override
   void initState() {
     transactionModel = widget.transactionModel ?? TransactionModel.empty();
-
-    // If an existing transaction model was provided, prefill form values so
-    // the page acts as an "edit" screen.
-    if (widget.transactionModel != null) {
+    if (widget.transactionModel != null && widget.isEditable) {
       final t = widget.transactionModel!;
       // Prefill amount (use simple string representation; formatting happens in build)
       amountString = t.amount.toString();
@@ -195,51 +197,53 @@ class _TransactionAmountCreatePageState
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
-      appBar: TitleAppbarBack(title: appLocalizations.newTransactionTitle),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 800),
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: AppDimensions.spacingSmall),
-                  _typetransaction(colorScheme, myTabs),
-                  const SizedBox(height: AppDimensions.spacingMedium),
-                  Container(
-                    padding: EdgeInsets.all(20.0),
-                    decoration: decorationContainer(
-                      context: context,
-                      colorFilled: colorScheme.primaryContainer,
-                      radius: 20,
+      //appBar: AppBar(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 800),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: AppDimensions.spacingLarge),
+                    _typetransaction(colorScheme, myTabs),
+                    const SizedBox(height: AppDimensions.spacingLarge),
+                    Container(
+                      padding: EdgeInsets.all(20.0),
+                      decoration: decorationContainer(
+                        context: context,
+                        colorFilled: colorScheme.primaryContainer,
+                        radius: 20,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _amount(
+                            formattedAmount,
+                            textTheme,
+                            amount,
+                            colorScheme,
+                            symbol,
+                          ),
+                          _descriptionamount(textTheme, colorScheme),
+                          const SizedBox(height: AppDimensions.spacingSmall),
+                          _geminiCategory(textTheme, colorScheme),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _amount(
-                          formattedAmount,
-                          textTheme,
-                          amount,
-                          colorScheme,
-                          symbol,
-                        ),
-                        _descriptionamount(textTheme, colorScheme),
-                        const SizedBox(height: AppDimensions.spacingSmall),
-                        _geminiCategory(textTheme, colorScheme),
-                      ],
+                    const SizedBox(height: AppDimensions.spacingExtraLarge),
+                    TransactionKeyBoardWidget(
+                      initialAmount: amountString,
+                      onAmountChange: _updateAmount,
                     ),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingLarge),
-                  TransactionKeyBoardWidget(
-                    initialAmount: amountString,
-                    onAmountChange: _updateAmount,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -271,20 +275,28 @@ class _TransactionAmountCreatePageState
                   type: transactionType,
                 );
 
+                ///Si ese argumento venia como nulo... significa que hay que editar y no crear.
+                ///Esta condicion se realiza dentreo del Amount y Details :)
                 await showCupertinoModalPopup<void>(
                   context: context,
                   builder: (context) {
-                    final ColorScheme cs = Theme.of(context).colorScheme;
-                    return ClipRRect(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.92,
-                        color: cs.surface,
-                        child: TransactionCreateDetailsPage(
-                          transactionModel: transactionModel,
+                    return CupertinoPageScaffold(
+                      navigationBar: CupertinoNavigationBar(
+                        leading: TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            "Atrás",
+                            style: textTheme.bodySmall!.copyWith(
+                              color: Colors.blue,
+                            ),
+                          ),
                         ),
+                      ),
+                      child: TransactionCreateDetailsPage(
+                        isEditable: widget.isEditable,
+                        transactionModel: transactionModel,
                       ),
                     );
                   },

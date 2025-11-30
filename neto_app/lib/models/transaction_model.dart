@@ -36,9 +36,6 @@ class TransactionModel {
     required this.reportIds,
   });
 
-  // 2. Constructor Vacío (Fácil inicialización en el UI)
-  final DateTime datess = DateTime.now();
-
   TransactionModel.empty({
     this.userId = '',
     this.type = '',
@@ -100,7 +97,7 @@ class TransactionModel {
     DateTime date = (map['date'] as Timestamp).toDate();
 
     return TransactionModel(
-      transactionId: transactionId ?? '',
+      transactionId: map['transactionId'] as String? ?? 'UNKNOWN_USER',
       userId: map['userId'] as String? ?? 'UNKNOWN_USER',
       type: map['type'] as String? ?? 'UNKNOWN_TYPE',
       currency: map['currency'] as String? ?? 'UNKNOWN_CURRENCY',
@@ -124,6 +121,7 @@ class TransactionModel {
   // 5. Serialización: Desde Objeto Transaction a Firestore (Map)
   Map<String, dynamic> toMap() {
     return {
+      'transactionId': transactionId,
       'userId': userId,
       'type': type,
       'currency': currency,

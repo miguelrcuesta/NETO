@@ -10,10 +10,12 @@ import 'package:neto_app/widgets/app_fields.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class TransactionCreateDetailsPage extends StatefulWidget {
+  final bool isEditable;
   final TransactionModel transactionModel;
   const TransactionCreateDetailsPage({
     super.key,
     required this.transactionModel,
+    required this.isEditable,
   });
 
   @override
@@ -52,72 +54,74 @@ class _TransactionCreateDetailsPageState
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
-      appBar: TitleAppbarBack(title: appLocalizations.newTransactionTitle),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: AppDimensions.paddingAllMedium,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _calendar(context, colorScheme, textTheme),
-              SizedBox(height: AppDimensions.spacingMedium),
-              Container(
-                padding: AppDimensions.paddingHorizontalMedium,
-                decoration: decorationContainer(
-                  context: context,
-                  colorFilled: colorScheme.primaryContainer,
-                  radius: 10,
+      //appBar: TitleAppbarBack(title: appLocalizations.newTransactionTitle),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: AppDimensions.paddingAllMedium,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _calendar(context, colorScheme, textTheme),
+                SizedBox(height: AppDimensions.spacingMedium),
+                Container(
+                  padding: AppDimensions.paddingHorizontalMedium,
+                  decoration: decorationContainer(
+                    context: context,
+                    colorFilled: colorScheme.primaryContainer,
+                    radius: 10,
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 0.0,
+                        ),
+                        minVerticalPadding: 0.0,
+                        visualDensity: VisualDensity.comfortable,
+                        //title: Text("Categoría", style: textTheme.titleSmall),
+                        title: Text(
+                          "Importe",
+                          style: textTheme.bodySmall!.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          widget.transactionModel.amount.toStringAsFixed(2),
+                          style: textTheme.titleMedium!.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Divider(height: 1, color: colorScheme.outline),
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 0.0,
+                        ),
+                        minVerticalPadding: 0.0,
+                        visualDensity: VisualDensity.comfortable,
+                        //title: Text("Categoría", style: textTheme.titleSmall),
+                        title: Text(
+                          "Categoría",
+                          style: textTheme.bodySmall!.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          widget.transactionModel.category.isEmpty
+                              ? "-"
+                              : '${widget.transactionModel.category} | ${widget.transactionModel.subcategory}',
+                          style: textTheme.titleSmall!.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 0.0,
-                      ),
-                      minVerticalPadding: 0.0,
-                      visualDensity: VisualDensity.comfortable,
-                      //title: Text("Categoría", style: textTheme.titleSmall),
-                      title: Text(
-                        "Importe",
-                        style: textTheme.bodySmall!.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      subtitle: Text(
-                        widget.transactionModel.amount.toStringAsFixed(2),
-                        style: textTheme.titleMedium!.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    Divider(height: 1, color: colorScheme.outline),
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 0.0,
-                      ),
-                      minVerticalPadding: 0.0,
-                      visualDensity: VisualDensity.comfortable,
-                      //title: Text("Categoría", style: textTheme.titleSmall),
-                      title: Text(
-                        "Categoría",
-                        style: textTheme.bodySmall!.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      subtitle: Text(
-                        widget.transactionModel.category.isEmpty
-                            ? "-"
-                            : '${widget.transactionModel.category} | ${widget.transactionModel.subcategory}',
-                        style: textTheme.titleSmall!.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -127,23 +131,30 @@ class _TransactionCreateDetailsPageState
         child: StandarButton(
           radius: 200,
           onPressed: () async {
-            final updatedTransactionModel = widget.transactionModel.copyWith(
+            final newTransactionModel = widget.transactionModel.copyWith(
               date: _selectedDay,
               year: _selectedDay.year,
               month: _selectedDay.month,
               userId: 'MIGUEL_USER_ID',
             );
-            await transactionController.createNewTransaction(
-              context: context,
-              newTransaction: updatedTransactionModel,
-            );
+            if (widget.isEditable) {
+              await transactionController.updateTransaction(
+                context: context,
+                newTransaction: newTransactionModel,
+              );
+            } else {
+              await transactionController.createNewTransaction(
+                context: context,
+                newTransaction: newTransactionModel,
+              );
+            }
             if (!context.mounted) return;
             Navigator.of(
               context,
               rootNavigator: true,
             ).popUntil((route) => route.isFirst);
           },
-          text: "Siguiente",
+          text: "Guardar",
         ),
       ),
     );
