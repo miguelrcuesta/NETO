@@ -1,230 +1,187 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Para DocumentSnapshot
 import 'package:neto_app/models/reports_model.dart';
 import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/services/reports_services.dart';
 import 'package:neto_app/widgets/app_snackbars.dart';
+// import 'package:neto_app/constants/app_utils.dart'; // Para mostrar SnackBar/Alertas
 
+// ⚠️ PLACEHOLDER: Esta clase DEBE existir en tu proyecto
 class PaginatedReportResult {
   final List<ReportModel> data;
   final DocumentSnapshot? lastDocument;
 
   PaginatedReportResult({required this.data, this.lastDocument});
 }
+// FIN PLACEHOLDER
 
 class ReportsController {
-  final ReportsService _reportsService;
-  final List<ReportModel> reportsSelected = [];
-  final int _pageSize = 20;
-  final String _currentUserId = 'MIGUEL_USER_ID';
+  final ReportsService _reportsService = ReportsService();
+  // 🔑 Placeholder de ID de Usuario
+  final String _currentUserId = 'placeholder_user_id';
 
-  ReportsController() : _reportsService = ReportsService();
-
-  // =========================================================
-  // LLAMADAS AL SERVICES
-  // =========================================================
-  Future<PaginatedReportResult> getReportsPaginated({
-    DocumentSnapshot? startAfterDocument,
-  }) async {
-    try {
-      // 1. Crear la consulta con el servicio
-      final Query query = _reportsService.getReports(
-        pageSize: _pageSize,
-        userId: _currentUserId,
-        // Puedes añadir aquí filtros opcionales de fecha si los necesitas:
-        // startDate: someDate,
-        // endDate: someOtherDate,
-      );
-
-      // 2. Aplicar el punto de inicio (paginación)
-      Query finalQuery = query;
-      if (startAfterDocument != null) {
-        finalQuery = query.startAfterDocument(startAfterDocument);
-      }
-
-      // 3. Ejecutar la consulta en la base de datos
-      final QuerySnapshot snapshot = await finalQuery.get();
-
-      // 4. Mapear los datos
-      final List<ReportModel> reports = snapshot.docs.map((doc) {
-        return ReportModel.fromJson(
-          doc.data() as Map<String, dynamic>,
-        ).copyWith(reportId: doc.id); // Asigna el ID del documento al modelo
-      }).toList();
-
-      // 5. Determinar el último documento para la próxima página
-      final DocumentSnapshot? lastDocument = snapshot.docs.isNotEmpty
-          ? snapshot.docs.last
-          : null;
-
-      return PaginatedReportResult(data: reports, lastDocument: lastDocument);
-    } catch (e) {
-      debugPrint('🚨 Error CRÍTICO en getReportsPaginated: $e');
-      rethrow;
-    }
+  String getUniqueReportTransactionId() {
+    // Esto genera un ID único de documento de Firestore sin crearlo realmente.
+    return FirebaseFirestore.instance.collection('reports').doc().id;
   }
 
-  Future<List<TransactionModel>> loadAllTransactionsForReport({
-    required BuildContext context,
-    required String reportId,
-  }) async {
-    try {
-      // Llamamos al servicio que maneja la obtención eficiente de IDs
-      return await _reportsService.getAllTransactionsFromReport(
-        reportId: reportId,
-      );
-    } catch (e) {
-      if (!context.mounted) return [];
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.error(
-          message: "Error al cargar los movimientos del informe",
-        ),
-      );
-      debugPrint('🚨 Error al cargar todos los movimientos del informe: $e');
-      return [];
-    }
-  }
+  //####################################################################
+  // 1. CREACIÓN
+  //####################################################################
 
   Future<void> createReport({
     required BuildContext context,
     required ReportModel report,
   }) async {
     try {
-      final newreportmodel = report.copyWith(
-        dateCreated: DateTime.now(),
-        userId: _currentUserId,
-      );
-      await _reportsService.createReport(newreportmodel);
+      final reportWithUser = report.copyWith(userId: _currentUserId);
+      await _reportsService.createReport(reportWithUser);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.success(message: "Informe creado correctamente"),
+        AppSnackbars.success(message: "Informe creador correctamente"),
       );
     } catch (e) {
-      if (!context.mounted) return;
+      debugPrint("Controller: Error al crear informe: $e");
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(AppSnackbars.error(message: "Error al crear el informe"));
     }
   }
 
-  Future<void> updateReport({
-    required BuildContext context,
-    required ReportModel report,
-  }) async {
-    try {
-      await _reportsService.updateReport(report);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.success(message: "Informe actualizado correctamente"),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.error(message: "Error al actualizar el informe"),
-      );
-    }
-  }
+  //####################################################################
+  // 2. LECTURA (PAGINACIÓN)
+  //####################################################################
 
-  Future<void> addTransactionToReport({
-    required BuildContext context,
-    required ReportModel report,
-    required List<String> transactionsIds,
+  /// Obtiene los informes paginados usando un cursor (DocumentSnapshot).
+  Future<PaginatedReportResult> getReportsPaginated({
+    DocumentSnapshot? lastDocument,
+    int pageSize = 10,
+    // Puedes añadir más filtros aquí si los necesitas (ej. startDate, endDate)
   }) async {
     try {
-      final List<String> auxlist = List<String>.from(report.listIdTransactions)
-        ..addAll(transactionsIds);
-      final updatedReport = report.copyWith(listIdTransactions: auxlist);
-      await _reportsService.updateReport(updatedReport);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.success(message: "Añadido al informe correctamente"),
+      final Query query = _reportsService.getReports(
+        userId: _currentUserId,
+        lastDocument: lastDocument,
+        pageSize: pageSize,
       );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(AppSnackbars.error(message: "Error al añadir al informe"));
-    }
-  }
 
-  Future<void> addMultipleTransactionsToReport({
-    required BuildContext context,
-    required List<String> transactionsIds,
-  }) async {
-    try {
-      for (int i = 0; i < reportsSelected.length; i++) {
-        final List<String> auxlist = List<String>.from(
-          reportsSelected[i].listIdTransactions,
-        )..addAll(transactionsIds);
-        final updatedReport = reportsSelected[i].copyWith(
-          listIdTransactions: auxlist,
-        );
-        await _reportsService.updateReport(updatedReport);
+      final QuerySnapshot querySnapshot = await query.get();
+
+      final reports = querySnapshot.docs.map((doc) {
+        return ReportModel.fromJson(doc.data() as Map<String, dynamic>);
+      }).toList();
+
+      // Determinar si hay un puntero para la siguiente página
+      DocumentSnapshot? newLastDocument;
+      if (querySnapshot.docs.isNotEmpty &&
+          querySnapshot.docs.length == pageSize) {
+        newLastDocument = querySnapshot.docs.last;
       }
 
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.success(message: "Añadido al informe correctamente"),
+      return PaginatedReportResult(
+        data: reports,
+        lastDocument: newLastDocument,
       );
     } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(AppSnackbars.error(message: "Error al añadir al informe"));
+      debugPrint("Controller: Error en la paginación de informes: $e");
+      return PaginatedReportResult(data: [], lastDocument: null);
     }
   }
 
-  Future<void> removeTransactionsFromReport({
+  //####################################################################
+  // 3. ELIMINACIÓN
+  //####################################################################
+
+  /// Elimina un solo informe.
+  Future<void> deleteReport({
     required BuildContext context,
-    required ReportModel report,
-    required List<String> transactionsIdsToRemove,
+    required String id,
   }) async {
     try {
-      // 1. Convertir la lista actual a Set para manipulación eficiente
-      final Set<String> currentIds = Set<String>.from(
-        report.listIdTransactions,
+      await _reportsService.deleteReport(id);
+      // AppUtils.showSuccess(context, 'Informe eliminado con éxito.');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbars.success(message: 'Informe eliminado con éxito.'),
       );
-
-      // 2. Eliminar todos los IDs a remover
-      currentIds.removeAll(transactionsIdsToRemove);
-
-      // 3. Crear y actualizar el reporte
-      final updatedReport = report.copyWith(
-        listIdTransactions: currentIds.toList(),
+    } catch (e) {
+      debugPrint("Controller: Error al eliminar informe $id: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbars.error(message: 'Error al eliminar el informe.'),
       );
+    }
+  }
+
+  /// Llama al servicio para eliminar una lista de IDs de informes.
+  Future<bool> deletemultipleReports({
+    required BuildContext context,
+    required List<String> idsToDelete,
+  }) async {
+    if (idsToDelete.isEmpty) {
+      debugPrint("Controller: Lista de IDs de informes vacía.");
+      return false;
+    }
+
+    try {
+      // Implementación simple (iterativa):
+      for (final id in idsToDelete) {
+        await _reportsService.deleteReport(id);
+      }
+
+      // AppUtils.showSuccess(context, 'Se eliminaron ${idsToDelete.length} informes.');
+      debugPrint(
+        "Controller: ${idsToDelete.length} informes eliminados con éxito.",
+      );
+      return true;
+    } catch (e) {
+      // AppUtils.showError(context, 'Error al eliminar informes.');
+      debugPrint(
+        "Controller: Excepción durante el borrado múltiple de informes: $e",
+      );
+      return false;
+    }
+  }
+
+  //####################################################################
+  // 4. ACTUALIZACIÓN
+  //####################################################################
+
+  /// Actualiza un informe existente en la base de datos a través del servicio.
+  Future<void> updateReport({
+    required BuildContext context,
+    required ReportModel updatedReport,
+  }) async {
+    // 🔑 Requerimos una instancia de ReportsService si no es un campo de clase ya definido
+    // final ReportsService _reportsService = ReportsService();
+
+    try {
+      // 1. Validar que el ID del informe exista
+      if (updatedReport.reportId.isEmpty) {
+        throw ArgumentError('El ReportModel debe tener un ID para actualizar.');
+      }
+
+      // 2. Llamar al servicio para realizar la actualización en Firestore
       await _reportsService.updateReport(updatedReport);
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.success(message: "Movimiento(s) eliminado(s) del informe"),
+        AppSnackbars.success(message: 'Informe actualizado con éxito.'),
       );
-    } catch (e) {
-      if (!context.mounted) return;
+    } on ArgumentError catch (e) {
+      debugPrint("Controller: Error de validación al actualizar informe: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.error(message: "Error al eliminar del informe"),
+        AppSnackbars.error(message: 'Error al actualizar el informe.'),
       );
-    }
-  }
-
-  // =========================================================
-  // FUNCIONES
-  // =========================================================
-
-  bool reportAlreadySelected(String id) {
-    return reportsSelected.any((report) => report.reportId == id);
-  }
-
-  void selectReportAction(ReportModel report) {
-    if (reportAlreadySelected(report.reportId) == false) {
-      reportsSelected.add(report);
-      debugPrint("Añadido: ${report.description}");
-      debugPrint(reportsSelected.toString());
-    } else {
-      reportsSelected.removeWhere((item) => item.reportId == report.reportId);
-
-      reportsSelected.remove(report);
-      debugPrint("Eliminado: ${report.description}");
-      debugPrint(reportsSelected.toString());
+      throw Exception('Error de validación del informe.');
+    } catch (e) {
+      debugPrint(
+        "Controller: Error al actualizar informe ${updatedReport.reportId}: $e",
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbars.error(message: 'Error al actualizar el informe.'),
+      );
+      // AppUtils.showError(context, 'Error al actualizar el informe.');
+      throw Exception('Fallo al actualizar el informe.');
     }
   }
 }

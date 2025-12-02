@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:neto_app/controllers/reports_controller.dart';
+import 'package:provider/provider.dart'; // 🔑 Importar Provider
+import 'package:neto_app/provider/reports_provider.dart'; // 🔑 Importar ReportsProvider
+// import 'package:neto_app/controllers/reports_controller.dart'; // ❌ Eliminado
 import 'package:neto_app/models/reports_model.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -16,45 +18,49 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   // VARIABLES
   //########################################################################
 
-  ReportsController reportsController = ReportsController();
+  // ❌ Eliminado: ReportsController reportsController = ReportsController();
 
   //########################################################################
   // CONTROLLERS
   //########################################################################
   TextEditingController nameReportController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   //########################################################################
   // FUNCIONES
   //########################################################################
   String? nameReportValidator(String? value) {
-    // 1. Comprueba si el valor es nulo (siempre devuelve nulo si el campo es nulo)
+    // 1. Comprueba si el valor es nulo
     if (value == null) {
       return 'El nombre del informe es obligatorio.';
     }
 
     // 2. Comprueba si el valor está vacío (después de eliminar espacios en blanco)
     if (value.trim().isEmpty) {
-      return 'El nombre del informe es obligatorio.';
+      return 'El nombre del informe no puede estar vacío.';
     }
-
-    // 3. Si el valor es válido, devuelve null.
-    // Devolver null indica que la validación ha pasado.
     return null;
   }
+
+  //########################################################################
+  // BUILD
+  //########################################################################
 
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      height: 300,
-      padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 50),
-      child: Form(
-        key: _formKey,
+    // 🔑 Obtener el Provider para ejecutar la acción (listen: false)
+    final reportsProvider = context.read<ReportsProvider>();
+
+    return Form(
+      key: _formKey,
+      child: Container(
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text("Crea un nuevo informe", style: textTheme.titleSmall),
+            Text("Crear informe", style: textTheme.titleSmall),
             const SizedBox(height: 30),
             StandarTextField(
               controller: nameReportController,
@@ -65,26 +71,27 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
               hintText: "Título del informe",
               textInputAction: TextInputAction.done,
             ),
-            Spacer(),
+            const Spacer(),
             StandarButton(
               onPressed: () async {
-                // Validate the form before creating the report
+                // 1. Validar el formulario
                 if (!(_formKey.currentState?.validate() ?? false)) {
                   debugPrint('ReportCreatePage: name field validation failed');
                   return;
                 }
                 debugPrint("Crear informe: ${nameReportController.text}");
 
-                ReportModel reportModel = ReportModel.empty();
-
-                reportModel = reportModel.copyWith(
+                // 2. Crear el modelo con los datos
+                final newReport = ReportModel.empty().copyWith(
                   name: nameReportController.text.trim(),
                   dateCreated: DateTime.now(),
                 );
 
-                await reportsController.createReport(
+                // 3. 🔑 Llamar al Provider para crear y actualizar la lista
+                // El Provider se encarga de llamar al Controller y luego a loadInitialReports()
+                await reportsProvider.createReportAndUpdate(
                   context: context,
-                  report: reportModel,
+                  newReport: newReport,
                 );
 
                 if (!context.mounted) return;

@@ -97,7 +97,7 @@ class TransactionModel {
     DateTime date = (map['date'] as Timestamp).toDate();
 
     return TransactionModel(
-      transactionId: map['transactionId'] as String? ?? 'UNKNOWN_USER',
+      transactionId: map['transactionId'] as String? ?? 'NO_ID_GIVEN',
       userId: map['userId'] as String? ?? 'UNKNOWN_USER',
       type: map['type'] as String? ?? 'UNKNOWN_TYPE',
       currency: map['currency'] as String? ?? 'UNKNOWN_CURRENCY',

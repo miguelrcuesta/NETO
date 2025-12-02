@@ -164,7 +164,7 @@ class TransactionService {
   Future<void> updateTransaction(TransactionModel transaction) async {
     try {
       final newDocRef = _transactionsRef.doc(transaction.transactionId);
-      await newDocRef.set(transaction.toMap());
+      await newDocRef.update(transaction.toMap());
     } on FirebaseException catch (e) {
       debugPrint(
         'Firebase Error al actualizar transacción: ${e.code} - ${e.message}',
@@ -194,11 +194,13 @@ class TransactionService {
     }
   }
 
-  Future<void> deleteMultipleTransactions(List<String> transactionIds) async {
+  Future<bool> deleteMultipleTransactions(List<String> transactionIds) async {
     try {
       for (int i = 0; i < transactionIds.length; i++) {
         deleteTransaction(transactionIds[i]);
       }
+
+      return true;
     } on FirebaseException catch (e) {
       debugPrint(
         'Firebase Error al eliminar las transaciones: ${e.code} - ${e.message}',

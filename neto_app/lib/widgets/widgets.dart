@@ -5,15 +5,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
-import 'package:neto_app/models/transaction_model.dart';
-import 'package:neto_app/pages/transactions/read/transaction_read_page.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 
-//#######################################################################
-//#######################################################################
+//======================================================================
+//======================================================================
 //CUSTOM KEYBOARDS
-//#######################################################################
-//#######################################################################
+//======================================================================
+//======================================================================
 class PinCodeWidget extends StatefulWidget {
   const PinCodeWidget({super.key});
 
@@ -238,13 +236,13 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
       onTap: onPressed,
       // Usamos un container de tamaño fijo para asegurar el área de toque
       child: Container(
-        width: 80, // Ancho suficiente para toque
-        height: 45, // Alto suficiente para toque
+        width: 60, // Ancho suficiente para toque
+        height: 60, // Alto suficiente para toque
         alignment: Alignment.center,
         margin: const EdgeInsets.only(top: 16),
         decoration: BoxDecoration(
           color: Colors.transparent, // Fondo transparente
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(30),
         ),
         child: child,
       ),
@@ -354,6 +352,11 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
   }
 }
 
+//======================================================================
+//======================================================================
+//CARDS
+//======================================================================
+//======================================================================
 class TransactionCard extends StatefulWidget {
   const TransactionCard({
     super.key,
@@ -578,15 +581,29 @@ class _TransactionCardSmallState extends State<TransactionCardSmall> {
 }
 
 class ReportCard extends StatelessWidget {
-  const ReportCard({super.key, required this.upText, required this.dateText});
+  const ReportCard({
+    super.key,
+    required this.upText,
+    required this.dateText,
+    this.isSelected = false,
+  });
 
   final String upText;
   final String dateText;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
+    // List<BoxShadow> softGrayShadows = [
+    //   BoxShadow(
+    //     color: Colors.grey.withOpacity(0.2),
+    //     blurRadius: 10.0,
+    //     offset: const Offset(0, 4),
+    //     spreadRadius: 1.0,
+    //   ),
+    // ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       height: 80,
@@ -594,6 +611,8 @@ class ReportCard extends StatelessWidget {
       decoration: decorationContainer(
         context: context,
         colorFilled: colorScheme.primaryContainer,
+        // colorBorder: colorScheme.outlineVariant,
+        //boxShadow: softGrayShadows,
         radius: 10,
       ),
       child: Row(
@@ -604,7 +623,7 @@ class ReportCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.folder, size: 35, color: colorScheme.onSurfaceVariant),
+              Icon(Icons.folder, size: 35, color: Colors.amberAccent),
               const SizedBox(width: AppDimensions.spacingMedium),
               SizedBox(
                 width: 250,

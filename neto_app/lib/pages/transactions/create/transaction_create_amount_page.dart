@@ -277,6 +277,8 @@ class _TransactionAmountCreatePageState
 
                 ///Si ese argumento venia como nulo... significa que hay que editar y no crear.
                 ///Esta condicion se realiza dentreo del Amount y Details :)
+                ///
+
                 await showCupertinoModalPopup<void>(
                   context: context,
                   builder: (context) {
@@ -589,27 +591,89 @@ class _TransactionAmountCreatePageState
     String displayCategory,
   ) {
     // Lógica para mostrar la categorización de Gemini o la selección del usuario
+    // if (isLoading) {
+    //   return Row(
+    //         children: [
+    //           const Icon(CupertinoIcons.sparkles, size: 18),
+    //           Text(
+    //             "Categorizando...",
+    //             style: textTheme.titleSmall!.copyWith(
+    //               color: colorScheme.primaryContainer,
+    //             ),
+    //           ),
+    //         ],
+    //       )
+    //       .animate(onPlay: (controller) => controller.repeat())
+    //       .shimmer(
+    //         duration: 1500.ms,
+    //         color: colorScheme.surface,
+    //         blendMode: BlendMode.colorDodge,
+    //       )
+    //       .fadeIn(duration: 800.ms, curve: Curves.easeOut)
+    //       .then(delay: 100.ms)
+    //       .fadeOut(duration: 800.ms, curve: Curves.easeIn);
+    // }
+
     if (isLoading) {
       return Row(
+            mainAxisSize:
+                MainAxisSize.min, // El contenedor se ajusta al contenido
             children: [
-              const Icon(CupertinoIcons.sparkles, size: 18),
+              // 1. Icono con un efecto de pulsación sutil
+              const Icon(CupertinoIcons.sparkles, size: 18)
+                  .animate(
+                    onPlay: (controller) => controller.repeat(reverse: true),
+                  )
+                  .scaleXY(
+                    end: 1.1,
+                    duration: 800.ms,
+                    curve: Curves.easeInOutSine,
+                  ),
+
+              const SizedBox(width: 8),
+
+              // 2. Texto de carga con el estilo de shimmer deseado
               Text(
-                "Categorizando...",
+                "Categorizando con IA...",
                 style: textTheme.titleSmall!.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  // Usamos el color principal de la aplicación
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           )
+          // Aplicamos una animación base al Row para controlar la repetición
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(
-            duration: 1500.ms,
-            color: colorScheme.surface,
-            blendMode: BlendMode.colorDodge,
-          )
-          .fadeIn(duration: 800.ms, curve: Curves.easeOut)
-          .then(delay: 100.ms)
-          .fadeOut(duration: 800.ms, curve: Curves.easeIn);
+          // 3. 🔑 CLAVE: El efecto de onda que pasa de un extremo al otro
+          // Esto es un 'wave' o 'shimmer' continuo que da sensación de actividad
+          .custom(
+            duration: 1800.ms,
+            builder: (context, value, child) {
+              // El valor 'value' va de 0.0 a 1.0, lo usamos para desplazar el degradado
+              final double wavePosition =
+                  value * 2.0 - 1.0; // Recorre de -1.0 a 1.0
+
+              return ShaderMask(
+                shaderCallback: (bounds) {
+                  // Crea un degradado linear que simula la onda de brillo
+                  return LinearGradient(
+                    begin: Alignment(wavePosition - 0.5, 0),
+                    end: Alignment(wavePosition + 0.5, 0),
+                    colors: [
+                      colorScheme.primary.withAlpha(70), // Color base
+                      colorScheme.primaryContainer.withAlpha(
+                        90,
+                      ), // Pico del brillo
+                      colorScheme.primary.withAlpha(98), // Color base
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ).createShader(bounds);
+                },
+                child: child, // El Row (Icono + Texto) es el hijo
+              );
+            },
+          );
     }
 
     if (selectedCategoryChoice != null || (sugerenciaGemini != null)) {

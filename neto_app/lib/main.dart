@@ -2,18 +2,36 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:neto_app/provider/reports_provider.dart';
+import 'package:neto_app/provider/transaction_provider.dart';
+import 'package:provider/provider.dart'; // 🔑 Importar Provider
 import 'package:neto_app/firebase_options.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/pages/home/home.dart';
-import 'package:neto_app/pages/reports/read/report_read_page.dart';
 import 'package:neto_app/pages/reports/read/reports_read_page.dart';
 import 'package:neto_app/pages/transactions/read/transactions_read_page.dart';
 import 'package:neto_app/theme/theme.dart';
+// Asumiendo que transactions_provider.dart existe en providers/
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        // 1. TransactionsProvider
+        ChangeNotifierProvider(
+          create: (_) => TransactionsProvider()..loadInitialTransactions(),
+        ),
+        // 2. ReportsProvider
+        ChangeNotifierProvider(
+          create: (_) => ReportsProvider()..loadInitialReports(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -22,18 +40,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      locale: Locale('es', 'ES'),
-      //supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('es', 'ES'),
       title: 'NETO',
       theme: CustomLightTheme.lightThemeData(),
       home: const MyHomePage(),
-      //home: ReportReadPage(),
     );
   }
 }
@@ -47,14 +63,15 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
-  // 3. Lista de widgets/contenidos que se mostrarán en el cuerpo (body)
-  final List<Widget> _widgetOptions = <Widget>[
-    const HomePage(),
-    TransactionsReadPage(),
-    const ReportsReadPage(showAppBar: true),
 
-    // Contenido para el índice 3: Perfil
+  // Lista de widgets/contenidos con ValueKey para AnimatedSwitcher
+  final List<Widget> _widgetOptions = <Widget>[
+    // 🔑 CLAVE: Usar ValueKey para que AnimatedSwitcher pueda distinguir los Widgets
+    const HomePage(key: ValueKey(0)),
+    TransactionsReadPage(key: const ValueKey(1)),
+    const ReportsReadPage(showAppBar: true, key: ValueKey(2)),
     Center(
+      key: const ValueKey(3),
       child: Text(
         'Página: 3 (Perfil)',
         style: const TextStyle(
@@ -65,18 +82,44 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     ),
   ];
+
+  // Función de cambio de pestaña
+  void _onTabChange(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
-    TextTheme textTheme = Theme.of(context).textTheme;
-    AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: colorScheme.primaryContainer,
-      // body: _widgetOptions.elementAt(_selectedIndex),
-      body: IndexedStack(
-        index: _selectedIndex, // Usa el índice seleccionado
-        children: _widgetOptions, // Pasa la lista COMPLETA de widgets
+
+      // 🔑 CLAVE: Reemplazar IndexedStack por AnimatedSwitcher para la transición
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350), // Duración de la animación
+        switchOutCurve: Curves.easeIn,
+        switchInCurve: Curves.easeOut,
+
+        // // Constructor de transición (Fade + Scale)
+        // transitionBuilder: (child, animation) {
+        //   // Animación de escala (entra ligeramente más pequeño)
+        //   final scaleAnimation = Tween<double>(
+        //     begin: 0.95,
+        //     end: 1.0,
+        //   ).animate(animation);
+
+        //   // Combinación de Fade y Scale para una transición suave y elegante
+        //   return FadeTransition(
+        //     opacity: animation,
+        //     child: ScaleTransition(scale: scaleAnimation, child: child),
+        //   );
+        // },
+        child: _widgetOptions[_selectedIndex], // El widget que se muestra
       ),
+
       bottomNavigationBar: Container(
         color: colorScheme.primaryContainer,
         child: Padding(
@@ -89,19 +132,12 @@ class _MyHomePageState extends State<MyHomePage> {
             gap: 8,
             padding: const EdgeInsets.all(16),
             selectedIndex: _selectedIndex,
-            onTabChange: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
+            onTabChange: _onTabChange,
 
             tabs: const [
               GButton(icon: Icons.home, text: 'Home'),
               GButton(icon: Icons.compare_arrows_sharp, text: 'Movimientos'),
-              GButton(
-                icon: Icons.folder, // Icono más apropiado para Informes
-                text: 'Informes',
-              ),
+              GButton(icon: Icons.folder, text: 'Informes'),
               GButton(icon: Icons.person, text: 'Perfil'),
             ],
           ),

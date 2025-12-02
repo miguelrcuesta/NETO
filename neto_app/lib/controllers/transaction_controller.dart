@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:neto_app/provider/transaction_provider.dart';
 import 'package:neto_app/services/transactions_services.dart';
 import 'package:neto_app/widgets/app_snackbars.dart';
 import 'package:rxdart/rxdart.dart'; // ⭐️ Necesario para BehaviorSubject y .value ⭐️
@@ -35,10 +36,11 @@ class TransactionController {
 
   /// Carga la siguiente página de transacciones y actualiza el Stream.
   Future<PaginatedTransactionResult> getTransactionsPaginated({
-    required String type,
+    String? type,
     DocumentSnapshot? startAfterDocument,
   }) async {
     try {
+      debugPrint("Llamando al controller: getTransactionsPaginated");
       // 1. Crear la consulta con el servicio
       final Query query = _transactionService.getTransactions(
         pageSize: _pageSize,
@@ -85,6 +87,7 @@ class TransactionController {
     required TransactionModel newTransaction,
   }) async {
     try {
+      debugPrint("Llamando al controller: createNewTransaction");
       final newId = await _transactionService.createTransaction(newTransaction);
 
       if (newId != null) {
@@ -106,6 +109,7 @@ class TransactionController {
     required TransactionModel newTransaction,
   }) async {
     try {
+      debugPrint("Llamando al controller: updateTransactions");
       await _transactionService.updateTransaction(newTransaction);
 
       if (!context.mounted) return;
@@ -125,6 +129,7 @@ class TransactionController {
     required String id,
   }) async {
     try {
+      debugPrint("Llamando al controller: deleteTransaction");
       await _transactionService.deleteTransaction(id);
 
       if (!context.mounted) return;
@@ -139,55 +144,42 @@ class TransactionController {
     }
   }
 
-  Future<void> deletemultipleTransactions({
+  Future<bool> deletemultipleTransactions({
     required BuildContext context,
+    required List<String> idsToDelete,
   }) async {
-    try {
-      if (transactionsSelected.isNotEmpty) {
-        await _transactionService.deleteMultipleTransactions(
-          transactionsSelected,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          AppSnackbars.warning(message: 'Selecciona para poder eliminar'),
-        );
-      }
-
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(AppSnackbars.success(message: '¡Movimientos eliminados!'));
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackbars.error(message: "Error al eliminar los movimientos"),
-      );
-    }
-  }
-
-  // =========================================================
-  // FUNCIONES
-  // =========================================================
-
-  bool transactionAlreadySelected(String id) {
-    if (transactionsSelected.contains(id)) {
-      return true;
-    }
-    return false;
-  }
-
-  void selectTransactionAction(TransactionModel transaction) {
-    //Si no existe se añade
-    if (transactionAlreadySelected(transaction.transactionId!) == false) {
-      transactionsSelected.add(transaction.transactionId!);
-      debugPrint("Añadido: ${transaction.description} - ${transaction.amount}");
-      debugPrint(transactionsSelected.toString());
-    } else {
-      transactionsSelected.remove(transaction.transactionId!);
+    debugPrint("Llamando al controller: deletemultipleTransactions");
+    if (idsToDelete.isEmpty) {
       debugPrint(
-        "Eliminado: ${transaction.description} - ${transaction.amount}",
+        "Controller: Lista de IDs vacía. No se realizó ninguna acción.",
       );
-      debugPrint(transactionsSelected.toString());
+      return false;
+    }
+
+    try {
+      // 1. Llamar al servicio de API para realizar el borrado
+      final success = await _transactionService.deleteMultipleTransactions(
+        idsToDelete,
+      );
+
+      if (success) {
+        // 2. Mostrar un mensaje de éxito al usuario (opcional)
+        // AppUtils.showSuccess(context, 'Se eliminaron ${idsToDelete.length} movimientos.');
+        debugPrint(
+          "Controller: ${idsToDelete.length} transacciones eliminadas con éxito.",
+        );
+        return true;
+      } else {
+        // Manejar el caso donde la API devuelve un error (ej. 400/500)
+        // AppUtils.showError(context, 'Error al eliminar movimientos.');
+        debugPrint("Controller: La API falló al eliminar las transacciones.");
+        return false;
+      }
+    } catch (e) {
+      // Manejar errores de red o excepciones
+      // AppUtils.showError(context, 'Error de red o excepción: $e');
+      debugPrint("Controller: Excepción durante el borrado: $e");
+      return false;
     }
   }
 }

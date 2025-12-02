@@ -9,8 +9,6 @@ class ReportsService {
     'reports',
   );
 
-  final TransactionService _transactionService = TransactionService();
-
   // =========================================================
   // LECTURA DE DATOS
   // =========================================================
@@ -66,7 +64,8 @@ class ReportsService {
     return query;
   }
 
-  Future<List<TransactionModel>> getAllTransactionsFromReport({
+  /// Obtiene y ordena todas las transacciones incrustadas en un informe específico.
+  Future<List<ReportTransactionModel>> getAllReportTransactions({
     required String reportId,
   }) async {
     // 1. OBTENER EL REPORTE
@@ -76,28 +75,23 @@ class ReportsService {
       throw Exception('Report document with ID $reportId not found');
     }
 
-    // 2. PREPARAR TODOS LOS IDs
-    // Se invierte la lista si quieres ver los movimientos más recientes primero.
-    final allTransactionIds = report.listIdTransactions.reversed.toList();
+    // 2. EXTRAER TRANSACCIONES DEL MAPA
+    // Obtenemos los valores (los objetos ReportTransactionModel) del mapa.
+    final List<ReportTransactionModel> allReportTransactions = report
+        .reportTransactions
+        .values
+        .toList();
 
-    // 3. OBTENER LOS MODELOS DE TRANSACCIÓN REALES
-    if (allTransactionIds.isEmpty) {
+    if (allReportTransactions.isEmpty) {
       return [];
     }
 
-    // Llamamos al servicio eficiente (maneja el whereIn y el batching de 10)
-    List<TransactionModel> transactions = await _transactionService
-        .getTransactionsByIds(allTransactionIds);
+    // 3. ORDENAR POR FECHA (Descendente: más reciente primero)
+    allReportTransactions.sort((a, b) => b.date.compareTo(a.date));
 
-    // 4. Asegurar el orden basado en la lista de IDs del reporte
-    transactions.sort((a, b) {
-      return allTransactionIds
-          .indexOf(a.transactionId!)
-          .compareTo(allTransactionIds.indexOf(b.transactionId!));
-    });
-
-    // 5. DEVOLVER LA LISTA SIMPLE
-    return transactions;
+    // 4. DEVOLVER LA LISTA SIMPLE Y ORDENADA
+    // Las transacciones ya son objetos completos, no necesitamos buscar IDs en otro lugar.
+    return allReportTransactions;
   }
 
   // =========================================================

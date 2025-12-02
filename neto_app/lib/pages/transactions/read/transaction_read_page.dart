@@ -1,14 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:neto_app/provider/reports_provider.dart';
+import 'package:neto_app/provider/transaction_provider.dart';
+import 'package:neto_app/widgets/app_buttons.dart';
+import 'package:provider/provider.dart'; // 🔑 Importar Provider
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/controllers/reports_controller.dart';
-import 'package:neto_app/controllers/transaction_controller.dart';
+import 'package:neto_app/controllers/transaction_controller.dart'; // Mantenemos el Controller para funciones que no son de estado (ej: reportes)
 import 'package:neto_app/models/transaction_model.dart';
-import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
-import 'package:neto_app/widgets/app_buttons.dart';
-import 'package:neto_app/pages/transactions/create/transaction_create_amount_page.dart';
 import 'package:neto_app/widgets/app_fields.dart';
+import 'package:neto_app/widgets/widgets.dart';
 
 class TransactionReadPage extends StatefulWidget {
   final TransactionModel transactionModel;
@@ -23,6 +25,8 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
   // CONTROLLERS
   //########################################################################
   ReportsController reportController = ReportsController();
+
+  // Mantenemos una instancia si la necesitamos para funciones auxiliares no relacionadas con el estado (ej: multi-select de reportes si se necesita)
   TransactionController transactionController = TransactionController();
 
   //########################################################################
@@ -35,19 +39,17 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
   //########################################################################
   dynamic getCategory(String id) {
     if (widget.transactionModel.type == TransactionType.expense.id) {
+      //Asumo que Expenses.getCategoryById existe
       return Expenses.getCategoryById(id);
     } else {
+      // Asumo que Incomes.getCategoryById existe
       return Incomes.getCategoryById(id);
     }
   }
 
-  Future<PaginatedReportResult> _initLoadReports() async {
-    debugPrint('Cargando informes');
-    return await reportController.getReportsPaginated();
-  }
-
   @override
   void initState() {
+    // ⚠️ Asumo que category, Expenses, and Incomes son tipos válidos
     category = getCategory(widget.transactionModel.categoryid);
     super.initState();
   }
@@ -56,7 +58,10 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
-    //AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
+    // 🔑 Obtenemos una referencia al Provider (listen: false) para disparar acciones
+    final provider = context.read<TransactionsProvider>();
+
     return Scaffold(
       body: SafeArea(
         child: Container(
@@ -91,15 +96,16 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                     ),
                   ),
                   const SizedBox(height: AppDimensions.spacingLarge),
+
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
                     minVerticalPadding: 0.0,
                     visualDensity: VisualDensity.comfortable,
-                    //title: Text("Categoría", style: textTheme.titleSmall),
                     leading: ClipRRect(
                       child: Container(
                         height: 45,
                         width: 45,
+
                         decoration: decorationContainer(
                           context: context,
                           colorFilled:
@@ -130,11 +136,11 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                     ),
                   ),
                   Divider(height: 1, color: colorScheme.outline),
+                  // ... (ListTile de Fecha sin cambios) ...
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
                     minVerticalPadding: 0.0,
                     visualDensity: VisualDensity.comfortable,
-                    //title: Text("Categoría", style: textTheme.titleSmall),
                     title: Text(
                       "Fecha",
                       style: textTheme.bodySmall!.copyWith(
@@ -151,11 +157,11 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                     ),
                   ),
                   Divider(height: 1, color: colorScheme.outline),
+                  // ... (ListTile de Importe sin cambios) ...
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
                     minVerticalPadding: 0.0,
                     visualDensity: VisualDensity.comfortable,
-                    //title: Text("Categoría", style: textTheme.titleSmall),
                     title: Text(
                       "Importe",
                       style: textTheme.bodySmall!.copyWith(
@@ -169,47 +175,160 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                       ),
                     ),
                   ),
-
-                  //Divider(height: 1, color: colorScheme.outline),
-                  const SizedBox(height: 50),
-                  GestureDetector(
-                    onTap: () {
-                      _showAllReports(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      decoration: decorationContainer(
-                        context: context,
-                        colorFilled: colorScheme.primaryContainer,
-                        colorBorder: Colors.blue,
-                        radius: 10,
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 0.0,
-                        ),
-                        minVerticalPadding: 0.0,
-                        visualDensity: VisualDensity.comfortable,
-                        leading: Icon(
-                          Icons.drive_folder_upload_rounded,
-                          color: Colors.blue,
-                        ),
-                        title: Text(
-                          "Añadir a un informe",
-                          style: textTheme.bodySmall!.copyWith(
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
-              Spacer(),
+              const Spacer(),
 
-              TextButton(
+              // Botón "Añadir a un informe"
+              StandarButton(
+                radius: 50,
+                backgroundColor: colorScheme.primary,
+                textColor: colorScheme.onPrimary,
+                text: "Añadir a un informe",
                 onPressed: () {
+                  // Transacción actual que se va a añadir
+                  final TransactionModel currentTransaction =
+                      widget.transactionModel;
+
+                  // Muestra el modal de selección de informes
+                  showCupertinoModalPopup(
+                    context: context,
+                    builder: (BuildContext modalContext) {
+                      // 🔑 La lógica del ReportSelectionModal
+
+                      // El ReportsProvider ya debería estar cargado
+                      // Usamos modalContext para Consumer
+                      final ReportsProvider provider = modalContext
+                          .read<ReportsProvider>();
+
+                      return Container(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              "Seleccionar informe",
+                              style: textTheme.titleMedium,
+                            ),
+                            Divider(color: colorScheme.outline),
+                            Expanded(
+                              // 🔑 Usamos Consumer para escuchar los cambios del ReportsProvider
+                              child: Consumer<ReportsProvider>(
+                                builder: (context, provider, child) {
+                                  final reports = provider.reports;
+
+                                  if (provider.isLoadingInitial &&
+                                      reports.isEmpty) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
+
+                                  if (reports.isEmpty) {
+                                    return Center(
+                                      child: Text(
+                                        "No tienes informes creados.",
+                                        style: textTheme.bodyMedium,
+                                      ),
+                                    );
+                                  }
+
+                                  return ListView.builder(
+                                    itemCount: reports.length,
+                                    itemBuilder: (context, index) {
+                                      final report = reports[index];
+
+                                      // Comprobar si la transacción ya existe en el mapa (clave es el reportTransactionId)
+                                      // Buscamos si ya existe una transacción con los mismos datos incrustados
+                                      // Para simplificar, asumiremos que si ya tiene una transacción con la misma descripción y monto, ya existe.
+                                      final bool isAlreadyInReport = report
+                                          .reportTransactions
+                                          .values
+                                          .any(
+                                            (rt) =>
+                                                rt.description ==
+                                                    currentTransaction
+                                                        .description &&
+                                                rt.amount ==
+                                                    currentTransaction.amount,
+                                          );
+
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          if (isAlreadyInReport) {
+                                            // Si ya está, cerramos el modal y opcionalmente mostramos un mensaje
+                                            Navigator.pop(modalContext);
+                                            // Opcional: AppUtils.showInfo(context, 'Ya está en este informe.');
+                                            return;
+                                          }
+
+                                          // 2. Añadir la transacción al informe usando el Provider
+                                          await provider.addTransactionToReport(
+                                            context: context,
+                                            report: report,
+                                            transactionmodel:
+                                                currentTransaction, // Objeto completo
+                                          );
+
+                                          if (!context.mounted) return;
+                                          // 3. Cerrar el modal
+                                          Navigator.pop(modalContext);
+                                        },
+                                        child: ReportCard(
+                                          upText: report.name,
+                                          // Mostrar el número de transacciones incrustadas
+                                          dateText:
+                                              report
+                                                      .reportTransactions
+                                                      .length ==
+                                                  1
+                                              ? '1 Movimiento'
+                                              : '${report.reportTransactions.length} Movimientos',
+                                          isSelected: isAlreadyInReport,
+                                          // trailing: isAlreadyInReport
+                                          //     ? Icon(
+                                          //         Icons.check,
+                                          //         color: colorScheme.primary,
+                                          //       )
+                                          //     : null,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+
+              // Botón Eliminar usando el Provider
+              TextButton(
+                onPressed: () async {
                   debugPrint("Eliminar movimiento");
+
+                  // Llamar al método del Provider para eliminar y notificar a la UI
+                  await provider.deleteTransaction(
+                    context: context,
+                    id: widget.transactionModel.transactionId!,
+                  );
+
+                  if (!context.mounted) return;
+                  // Volver a la pantalla anterior (TransactionsReadPage)
+                  // El TransactionsReadPage se actualizará automáticamente gracias al notifyListeners()
+                  Navigator.pop(context, true);
                 },
                 child: Text(
                   "Eliminar movimiento",
@@ -221,155 +340,6 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Future<dynamic> _showAllReports(BuildContext context) {
-    //AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    TextTheme textTheme = Theme.of(context).textTheme;
-    Future<PaginatedReportResult> futureReports = _initLoadReports();
-
-    return showCupertinoModalPopup(
-      barrierDismissible: false,
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, myState) {
-            return CupertinoPageScaffold(
-              navigationBar: CupertinoNavigationBar(
-                leading: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    transactionController.transactionsSelected.clear();
-                  },
-                  child: Text(
-                    "Atrás",
-                    style: textTheme.bodySmall!.copyWith(color: Colors.blue),
-                  ),
-                ),
-                trailing: reportController.reportsSelected.isNotEmpty
-                    ? TextButton(
-                        onPressed: () async {
-                          await reportController
-                              .addMultipleTransactionsToReport(
-                                context: context,
-                                transactionsIds: [
-                                  widget.transactionModel.transactionId!,
-                                ],
-                              );
-                          if (!context.mounted) return;
-                          Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).popUntil((route) => route.isFirst);
-                        },
-                        child: Text(
-                          "Añadir",
-                          style: textTheme.bodySmall!.copyWith(
-                            color: Colors.blue,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              child: FutureBuilder(
-                future: futureReports,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    final reports = snapshot.data!.data;
-
-                    if (reports.isEmpty) {
-                      return Center(
-                        child: SizedBox(
-                          height: 220,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                height: 150,
-                                width: 180,
-                                child: Image.asset(
-                                  'assets/animations/happy_pig.png',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Text(
-                                textAlign: TextAlign.center,
-                                'No hay gastos disponibles.',
-                                style: textTheme.titleMedium!.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.separated(
-                      separatorBuilder: (context, index) {
-                        return Divider(color: colorScheme.outline);
-                      },
-                      itemCount: reports.length,
-                      itemBuilder: (context, index) {
-                        final report = reports[index];
-                        bool reportsSelected = reportController
-                            .reportAlreadySelected(report.reportId);
-
-                        return CupertinoListTile(
-                          leading: Icon(
-                            Icons.folder,
-
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          title: Text(
-                            report.name,
-                            style: textTheme.titleSmall!.copyWith(
-                              color: colorScheme.onSurface,
-                              fontSize: 13,
-                            ),
-                          ),
-                          subtitle: Text(
-                            AppFormatters.customDateFormatShort(
-                              report.dateCreated,
-                            ),
-                            style: textTheme.bodySmall!.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            softWrap: true,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing: IconButton(
-                            onPressed: () {
-                              reportController.selectReportAction(report);
-
-                              myState(() {
-                                reportsSelected = !reportsSelected;
-                              });
-                            },
-                            icon: reportsSelected
-                                ? Icon(Icons.check_circle, color: Colors.blue)
-                                : Icon(Icons.circle),
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(
-                      child: Text('No hay transacciones disponibles.'),
-                    );
-                  }
-                },
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

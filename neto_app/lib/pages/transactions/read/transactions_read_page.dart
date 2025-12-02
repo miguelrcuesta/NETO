@@ -1,15 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:neto_app/provider/transaction_provider.dart';
 import 'package:neto_app/constants/app_enums.dart';
-import 'package:neto_app/constants/app_utils.dart';
+import 'package:neto_app/constants/app_utils.dart'; // Asumiendo que AppFormatters y AppDimensions están aquí
 import 'package:neto_app/controllers/reports_controller.dart';
 import 'package:neto_app/controllers/transaction_controller.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
 import 'package:neto_app/models/transaction_model.dart';
-import 'package:neto_app/pages/reports/read/reports_read_page.dart';
 import 'package:neto_app/pages/transactions/create/transaction_create_amount_page.dart';
 import 'package:neto_app/pages/transactions/read/transaction_read_page.dart';
-import 'package:neto_app/widgets/widgets.dart';
+import 'package:neto_app/widgets/widgets.dart'; // Asumiendo que TransactionCardSmall está aquí
+
+// ⚠️ PLACEHOLDERS (Asegúrate de que existan en tus archivos)
+class PaginatedReportResult {}
+// FIN PLACEHOLDERS
 
 class TransactionsReadPage extends StatefulWidget {
   final TransactionModel? transactionModel;
@@ -24,21 +29,14 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
   //########################################################################
   // VARIABLES
   //########################################################################
-
-  bool isMultiselectAviable = false;
-  bool isItemSelected = false;
-  bool isReportSelected = false;
-  final List selectedItems = [];
-  final List selectedReports = [];
-
-  late Future<PaginatedTransactionResult> expensesFuture;
-  late Future<PaginatedTransactionResult> incomesFuture;
+  // 🔑 Eliminadas: isMultiselectAviable, selectedItems (Ahora gestionadas por TransactionsProvider)
+  final List selectedReports = []; // Se mantiene si es estado local
 
   //########################################################################
   // CONTROLLERS
   //########################################################################
-
   late final TabController _tabController;
+  // Se mantienen para interactuar con la API/Servicios, llamados por el Provider
   TransactionController transactionController = TransactionController();
   ReportsController reportController = ReportsController();
 
@@ -46,65 +44,25 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
   // FUNCIONES
   //########################################################################
 
-  Future<PaginatedReportResult> _initLoadReports() async {
-    debugPrint('Cargando informes');
-    return await reportController.getReportsPaginated();
-  }
-
+  // 🔑 Limpia la selección en el Provider
   void _updateNotSelectableUI() {
-    setState(() {
-      isMultiselectAviable = false;
-      isItemSelected = false;
-      transactionController.transactionsSelected.clear();
-    });
+    context.read<TransactionsProvider>().clearSelection();
   }
 
-  void _updateSelectableUI() {
-    setState(() {
-      isMultiselectAviable = true;
-      transactionController.transactionsSelected.clear();
-    });
-  }
-
-  ///Si el índice es 0, carga gastos; si es 1, carga ingresos.
-  Future<PaginatedTransactionResult> _initLoadTransactions(int index) async {
-    debugPrint('Cargando transacciones para el índice: $index');
-    if (index == 0) {
-      return await transactionController.getTransactionsPaginated(
-        type: TransactionType.expense.id,
-      );
-    } else {
-      return await transactionController.getTransactionsPaginated(
-        type: TransactionType.income.id,
-      );
-    }
-  }
-
-  void _refreshAllData(int index) {
-    //Si es cero solo refresca los gastos para optimizar las llamadas
-    if (index == 0) {
-      setState(() {
-        expensesFuture = _initLoadTransactions(0);
-      });
-    }
-    //Si es uno refresca solo los ingresos para optimizar las llamadas
-    if (index == 1) {
-      setState(() {
-        incomesFuture = _initLoadTransactions(1);
-      });
-    }
-  }
+  // No necesitamos _updateSelectableUI ya que el onLongPress lo inicia implícitamente
 
   //########################################################################
-  //ESTADOS WIDGET
+  // ESTADOS WIDGET
   //########################################################################
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    expensesFuture = _initLoadTransactions(0);
-    incomesFuture = _initLoadTransactions(1);
+    // 🔑 Iniciar la carga de transacciones al inicio usando el Provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TransactionsProvider>().loadInitialTransactions();
+    });
   }
 
   @override
@@ -115,29 +73,33 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
 
   @override
   Widget build(BuildContext context) {
-    //AppLocalizations appLocalizations = AppLocalizations.of(context)!;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
-    TextTheme textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       backgroundColor: colorScheme.primaryContainer,
-
-      appBar: _selectedAviableAppbar(context),
-      body: Container(
-        padding: EdgeInsets.symmetric(vertical: 10),
+      appBar: _selectedAviableAppbar(context), // AppBar ya es reactivo
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: TabBarView(
           controller: _tabController,
-          children: [_buildFutureTransactions(0), _buildFutureTransactions(1)],
+          children: [
+            _buildTransactionsView(context, TransactionType.expense.id),
+            _buildTransactionsView(context, TransactionType.income.id),
+          ],
         ),
       ),
       floatingActionButton: ClipOval(
         child: FloatingActionButton(
           heroTag: 'transactions_read_fab',
           onPressed: () async {
+            _updateNotSelectableUI(); // Aseguramos que el multiselect está desactivado
+
             await showCupertinoModalPopup(
               barrierDismissible: false,
               context: context,
               builder: (context) {
                 return CupertinoPageScaffold(
+                  // ... (NavigationBar y TransactionAmountCreatePage) ...
                   navigationBar: CupertinoNavigationBar(
                     leading: TextButton(
                       onPressed: () {
@@ -145,9 +107,9 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                       },
                       child: Text(
                         "Atrás",
-                        style: textTheme.bodySmall!.copyWith(
-                          color: Colors.blue,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall!.copyWith(color: Colors.blue),
                       ),
                     ),
                   ),
@@ -158,8 +120,6 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                 );
               },
             );
-
-            _refreshAllData(_tabController.index);
           },
           backgroundColor: colorScheme.primary,
           child: Icon(Icons.add, color: colorScheme.onPrimary),
@@ -169,32 +129,39 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
     );
   }
 
+  // 🔑 APPBAR REACTIVO USANDO context.watch
   AppBar _selectedAviableAppbar(BuildContext context) {
     AppLocalizations appLocalizations = AppLocalizations.of(context)!;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
-    if (isMultiselectAviable == true) {
+
+    // 🔑 context.watch fuerza la reconstrucción del AppBar cuando cambia el estado del Provider
+    final provider = context.watch<TransactionsProvider>();
+
+    final isMultiselectActive = provider.isMultiselectActive;
+    final isItemSelected = provider.transactionsSelected.isNotEmpty;
+
+    if (isMultiselectActive) {
+      // AppBar de selección
       return AppBar(
         backgroundColor: colorScheme.surface,
         leading: IconButton(
-          onPressed: () {
-            setState(() {
-              //Actualizamos la UI y luego limpiamos la lista;
-              _updateNotSelectableUI();
-            });
-          },
+          onPressed: _updateNotSelectableUI, // Limpia la selección
           icon: Icon(CupertinoIcons.xmark, color: colorScheme.primary),
         ),
-
+        title: Text(
+          '${provider.transactionsSelected.length} seleccionados',
+          style: textTheme.titleMedium,
+        ),
         actions: [
-          if (transactionController.transactionsSelected.isNotEmpty)
+          if (isItemSelected)
             IconButton(
               onPressed: () async {
-                await transactionController.deletemultipleTransactions(
+                // 🔑 Llama al Provider para borrar
+                await provider.deleteSelectedTransactionsAndUpdate(
                   context: context,
+                  controller: transactionController,
                 );
-                _updateNotSelectableUI();
-                _refreshAllData(_tabController.index);
               },
               icon: Icon(
                 CupertinoIcons.delete,
@@ -202,21 +169,10 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                 size: 20,
               ),
             ),
-          if (transactionController.transactionsSelected.isNotEmpty)
-            IconButton(
-              onPressed: () async {
-                //_showfolders...
-                _showAllReports(context);
-              },
-              icon: Icon(
-                Icons.folder_copy_outlined,
-                color: colorScheme.primary,
-                size: 20,
-              ),
-            ),
         ],
       );
     } else {
+      // AppBar normal
       return AppBar(
         backgroundColor: colorScheme.primaryContainer,
         title: Text("Movimientos", style: textTheme.titleSmall),
@@ -236,104 +192,119 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
     }
   }
 
-  FutureBuilder<PaginatedTransactionResult> _buildFutureTransactions(
-    int index,
-  ) {
+  // 🔑 FUNCIÓN DE VISUALIZACIÓN DE TRANSACCIONES USANDO CONSUMER
+  Widget _buildTransactionsView(BuildContext context, String type) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
-    Future<PaginatedTransactionResult> future = index == 0
-        ? expensesFuture
-        : incomesFuture;
-    return FutureBuilder(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+
+    return Consumer<TransactionsProvider>(
+      builder: (context, provider, child) {
+        final transactions = provider.transactions
+            .where((t) => t.type == type)
+            .toList();
+
+        final isMultiselectActive = provider.isMultiselectActive;
+
+        // 1. Estado de Carga Inicial
+        if (provider.isLoadingInitial && transactions.isEmpty) {
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (snapshot.hasData) {
-          final transactions = snapshot.data!.data;
-          if (transactions.isEmpty) {
-            return Center(
-              child: SizedBox(
-                height: 220,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 150,
-                      width: 180,
-                      child: Image.asset(
-                        'assets/animations/sad_pig.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Text(
-                      textAlign: TextAlign.center,
-                      'No hay movimientos disponibles.',
-                      style: textTheme.titleMedium!.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          return ListView.builder(
-            //shrinkWrap: true,
-            itemCount: transactions.length,
-            itemBuilder: (context, index) {
-              final transaction = transactions[index];
-              bool transactionsSelected = transactionController
-                  .transactionsSelected
-                  .contains(transaction.transactionId);
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10.0,
-                  vertical: 6.0,
-                ),
-                child: InkWell(
-                  onLongPress: () {
-                    setState(() {
-                      _updateSelectableUI();
-                    });
-                  },
-
-                  onTap: () {
-                    /// Si el multiselect esta activado, activamos el selector y añadimos a la lista si no
-                    /// abrimos el movimiento para ver el detalle.
-                    if (isMultiselectAviable) {
-                      transactionController.selectTransactionAction(
-                        transaction,
-                      );
-                    } else {
-                      _showTransaction(context, textTheme, transaction);
-                    }
-
-                    setState(() {
-                      transactionsSelected = !transactionsSelected;
-                    });
-                  },
-
-                  child: TransactionCardSmall(
-                    isSelected: transactionsSelected,
-                    idCategory: transaction.categoryid,
-                    type: transaction.type,
-                    title: transaction.description ?? 'Sin categoría',
-                    subtitle: AppFormatters.customDateFormatShort(
-                      transaction.date ?? DateTime.now(),
-                    ),
-                    amount: transaction.amount.toStringAsFixed(2),
-                  ),
-                ),
-              );
-            },
-          );
-        } else {
-          return const Center(child: Text('No hay transacciones disponibles.'));
         }
+
+        // 2. Estado Vacío
+        if (transactions.isEmpty && !provider.isLoadingInitial) {
+          return Center(
+            child: SizedBox(
+              height: 220,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.compare_arrows_sharp,
+                    size: 120,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  Text(
+                    textAlign: TextAlign.center,
+                    'No hay movimientos disponibles.',
+                    style: textTheme.titleMedium!.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 3. Scroll Infinito y RefreshIndicator
+        return RefreshIndicator(
+          onRefresh: provider.loadInitialTransactions,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (scrollInfo.metrics.pixels >=
+                      scrollInfo.metrics.maxScrollExtent * 0.9 &&
+                  !provider.isLoadingMore &&
+                  provider.hasMore) {
+                provider.loadMoreTransactions();
+              }
+              return false;
+            },
+            child: ListView.builder(
+              itemCount: transactions.length + (provider.isLoadingMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == transactions.length) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  );
+                }
+
+                final transaction = transactions[index];
+
+                // 🔑 Usamos el Set del Provider para saber si está seleccionado
+                bool isSelected = provider.transactionsSelected.contains(
+                  transaction.transactionId,
+                );
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10.0,
+                    vertical: 6.0,
+                  ),
+                  child: InkWell(
+                    onLongPress: () {
+                      // 🔑 Inicia el modo multiselección y selecciona el elemento
+                      provider.toggleTransactionSelection(transaction);
+                    },
+                    onTap: () {
+                      // 🔑 Si está activo, selecciona/deselecciona. Si no, navega.
+                      if (isMultiselectActive) {
+                        provider.toggleTransactionSelection(transaction);
+                      } else {
+                        _showTransaction(context, textTheme, transaction);
+                      }
+                    },
+                    child: TransactionCardSmall(
+                      isSelected: isSelected, // 🔑 Usa el estado del Provider
+                      idCategory: transaction.categoryid,
+                      type: transaction.type,
+                      title: transaction.description ?? 'Sin categoría',
+                      subtitle: AppFormatters.customDateFormatShort(
+                        transaction.date ?? DateTime.now(),
+                      ),
+                      amount: transaction.amount.toStringAsFixed(2),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
       },
     );
   }
@@ -352,14 +323,17 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
             leading: TextButton(
               onPressed: () {
                 Navigator.pop(context);
+                _updateNotSelectableUI(); // Limpia la selección por si acaso
               },
               child: Text(
-                "Atrás",
+                "Atras",
                 style: textTheme.bodySmall!.copyWith(color: Colors.blue),
               ),
             ),
+            //BOTON EDITAR
             trailing: TextButton(
               onPressed: () async {
+                // ... (Lógica de navegación a edición) ...
                 await showCupertinoModalPopup(
                   barrierDismissible: false,
                   context: context,
@@ -385,9 +359,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                     );
                   },
                 );
-                _refreshAllData(_tabController.index);
               },
-
               child: Text(
                 "Editar",
                 style: textTheme.bodySmall!.copyWith(color: Colors.blue),
@@ -395,154 +367,6 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
             ),
           ),
           child: TransactionReadPage(transactionModel: transaction),
-        );
-      },
-    );
-  }
-
-  Future<dynamic> _showAllReports(BuildContext context) {
-    //AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    TextTheme textTheme = Theme.of(context).textTheme;
-    Future<PaginatedReportResult> futureReports = _initLoadReports();
-
-    return showCupertinoModalPopup(
-      barrierDismissible: false,
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, myState) {
-            return CupertinoPageScaffold(
-              navigationBar: CupertinoNavigationBar(
-                leading: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    transactionController.transactionsSelected.clear();
-                  },
-                  child: Text(
-                    "Atrás",
-                    style: textTheme.bodySmall!.copyWith(color: Colors.blue),
-                  ),
-                ),
-                trailing: reportController.reportsSelected.isNotEmpty
-                    ? TextButton(
-                        onPressed: () async {
-                          await reportController
-                              .addMultipleTransactionsToReport(
-                                context: context,
-                                transactionsIds:
-                                    transactionController.transactionsSelected,
-                              );
-                          if (!context.mounted) return;
-                          Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).popUntil((route) => route.isFirst);
-                        },
-                        child: Text(
-                          "Añadir",
-                          style: textTheme.bodySmall!.copyWith(
-                            color: Colors.blue,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              child: FutureBuilder(
-                future: futureReports,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    final reports = snapshot.data!.data;
-
-                    if (reports.isEmpty) {
-                      return Center(
-                        child: SizedBox(
-                          height: 220,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                height: 150,
-                                width: 180,
-                                child: Image.asset(
-                                  'assets/animations/happy_pig.png',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Text(
-                                textAlign: TextAlign.center,
-                                'No hay gastos disponibles.',
-                                style: textTheme.titleMedium!.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.separated(
-                      separatorBuilder: (context, index) {
-                        return Divider(color: colorScheme.outline);
-                      },
-                      itemCount: reports.length,
-                      itemBuilder: (context, index) {
-                        final report = reports[index];
-                        bool reportsSelected = reportController
-                            .reportAlreadySelected(report.reportId);
-
-                        return CupertinoListTile(
-                          leading: Icon(
-                            Icons.folder,
-
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          title: Text(
-                            report.name,
-                            style: textTheme.titleSmall!.copyWith(
-                              color: colorScheme.onSurface,
-                              fontSize: 13,
-                            ),
-                          ),
-                          subtitle: Text(
-                            AppFormatters.customDateFormatShort(
-                              report.dateCreated,
-                            ),
-                            style: textTheme.bodySmall!.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            softWrap: true,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing: IconButton(
-                            onPressed: () {
-                              reportController.selectReportAction(report);
-
-                              myState(() {
-                                reportsSelected = !reportsSelected;
-                              });
-                            },
-                            icon: reportsSelected
-                                ? Icon(Icons.check_circle, color: Colors.blue)
-                                : Icon(Icons.circle),
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(
-                      child: Text('No hay transacciones disponibles.'),
-                    );
-                  }
-                },
-              ),
-            );
-          },
         );
       },
     );
