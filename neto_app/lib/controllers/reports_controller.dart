@@ -17,8 +17,8 @@ class PaginatedReportResult {
 
 class ReportsController {
   final ReportsService _reportsService = ReportsService();
-  // 🔑 Placeholder de ID de Usuario
-  final String _currentUserId = 'placeholder_user_id';
+
+  final String _currentUserId = 'MIGUEL_USER_ID';
 
   String getUniqueReportTransactionId() {
     // Esto genera un ID único de documento de Firestore sin crearlo realmente.
@@ -33,6 +33,7 @@ class ReportsController {
     required BuildContext context,
     required ReportModel report,
   }) async {
+    debugPrint('Create report');
     try {
       final reportWithUser = report.copyWith(userId: _currentUserId);
       await _reportsService.createReport(reportWithUser);
@@ -58,6 +59,7 @@ class ReportsController {
     int pageSize = 10,
     // Puedes añadir más filtros aquí si los necesitas (ej. startDate, endDate)
   }) async {
+    debugPrint('getReportsPaginated');
     try {
       final Query query = _reportsService.getReports(
         userId: _currentUserId,
@@ -97,6 +99,7 @@ class ReportsController {
     required BuildContext context,
     required String id,
   }) async {
+    debugPrint('deleteReport');
     try {
       await _reportsService.deleteReport(id);
       // AppUtils.showSuccess(context, 'Informe eliminado con éxito.');
@@ -117,6 +120,7 @@ class ReportsController {
     required BuildContext context,
     required List<String> idsToDelete,
   }) async {
+    debugPrint('deletemultipleReports');
     if (idsToDelete.isEmpty) {
       debugPrint("Controller: Lista de IDs de informes vacía.");
       return false;
@@ -151,6 +155,7 @@ class ReportsController {
     required BuildContext context,
     required ReportModel updatedReport,
   }) async {
+    debugPrint('updateReport');
     // 🔑 Requerimos una instancia de ReportsService si no es un campo de clase ya definido
     // final ReportsService _reportsService = ReportsService();
 

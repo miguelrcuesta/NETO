@@ -127,7 +127,6 @@ class _ReportsReadPageState extends State<ReportsReadPage>
           if (isItemSelected)
             IconButton(
               onPressed: () async {
-                // 🔑 Llama al Provider para borrar
                 await provider.deleteSelectedReportsAndUpdate(context: context);
               },
               icon: Icon(Icons.delete, color: colorScheme.primary, size: 20),
@@ -147,7 +146,6 @@ class _ReportsReadPageState extends State<ReportsReadPage>
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    // 🔑 Usamos Consumer para escuchar los cambios en el Provider y reconstruir solo la lista
     return Consumer<ReportsProvider>(
       builder: (context, provider, child) {
         final reports = provider.reports;
@@ -233,13 +231,14 @@ class _ReportsReadPageState extends State<ReportsReadPage>
                       if (isMultiselectActive) {
                         provider.toggleReportSelection(report);
                       } else {
-                        // Navigator.push<void>(
-                        //   context,
-                        //   MaterialPageRoute<void>(
-                        //     builder: (BuildContext context) =>
-                        //         ReportReadPage(reportModel: report),
-                        //   ),
-                        // );
+                        Navigator.push<void>(
+                          context,
+                          MaterialPageRoute<void>(
+                            // Navegamos al ReportReadPage, pasándole el ReportModel completo
+                            builder: (BuildContext context) =>
+                                ReportReadPage(reportModel: report),
+                          ),
+                        );
                       }
                     },
                     child: ReportCard(

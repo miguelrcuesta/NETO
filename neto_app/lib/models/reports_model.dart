@@ -1,82 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:neto_app/models/transaction_model.dart';
 
-// class ReportModel {
-//   // 1. Identificadores y Metadatos
-//   final String reportId;
-//   final String userId;
-//   final String name;
-//   final String? description;
-//   final DateTime dateCreated;
-//   final List<String> listIdTransactions;
-
-//   // Constructor
-//   ReportModel({
-//     required this.reportId,
-//     required this.userId,
-//     required this.name,
-//     this.description,
-//     required this.dateCreated,
-//     required this.listIdTransactions,
-//   });
-
-//   ReportModel copyWith({
-//     String? reportId,
-//     String? userId,
-//     String? name,
-//     String? description,
-//     DateTime? dateCreated,
-//     List<String>? listIdTransactions,
-//   }) {
-//     return ReportModel(
-//       reportId: reportId ?? this.reportId,
-//       userId: userId ?? this.userId,
-//       name: name ?? this.name,
-//       // Manejo de nulos para String?: Si el nuevo valor es nulo, usamos el valor original (this.description)
-//       // Si quieres la opción de establecerlo *explícitamente* a nulo, se requeriría un envoltorio como Value<T>.
-//       description: description ?? this.description,
-//       dateCreated: dateCreated ?? this.dateCreated,
-//       listIdTransactions: listIdTransactions ?? this.listIdTransactions,
-//     );
-//   }
-
-//   // Método para guardar en la base de datos (Firebase/Firestore)
-//   Map<String, dynamic> toJson() {
-//     return {
-//       'reportId': reportId,
-//       'userId': userId,
-//       'name': name,
-//       'description': description,
-//       'dateCreated': dateCreated, // Formato ISO 8601 para DateTime
-//       'listIdTransactions': listIdTransactions,
-//     };
-//   }
-
-//   // Método de fábrica para cargar desde la base de datos
-//   factory ReportModel.fromJson(Map<String, dynamic> json) {
-//     DateTime dateCreated = (json['dateCreated'] as Timestamp).toDate();
-//     return ReportModel(
-//       reportId: json['reportId'] as String,
-//       userId: json['userId'] as String,
-//       name: json['name'] as String,
-//       description: json['description'] as String?,
-//       dateCreated: dateCreated,
-//       // Asegurar que las listas se carguen como List<String>
-//       listIdTransactions: List<String>.from(json['listIdTransactions'] as List),
-//     );
-//   }
-
-//   factory ReportModel.empty() {
-//     return ReportModel(
-//       reportId: '',
-//       name: '',
-//       userId: '',
-//       dateCreated: DateTime.now(), // Fecha de creación actual por defecto
-//       listIdTransactions: [], // Lista de IDs de transacciones vacía
-//     );
-//   }
-// }
-
 class ReportModel {
   // 1. Identificadores y Metadatos
   final String reportId;
@@ -85,7 +9,6 @@ class ReportModel {
   final String? description;
   final DateTime dateCreated;
 
-  // 🔑 CAMBIO CRUCIAL: Contenedor de transacciones como MAPA incrustado
   final Map<String, ReportTransactionModel> reportTransactions;
 
   // Constructor
@@ -95,7 +18,7 @@ class ReportModel {
     required this.name,
     this.description,
     required this.dateCreated,
-    required this.reportTransactions, // 🔑 Nuevo campo
+    required this.reportTransactions,
   });
 
   // ----------------------------------------------------------------------
@@ -108,7 +31,7 @@ class ReportModel {
     String? name,
     String? description,
     DateTime? dateCreated,
-    Map<String, ReportTransactionModel>? reportTransactions, // 🔑 Nuevo tipo
+    Map<String, ReportTransactionModel>? reportTransactions,
   }) {
     return ReportModel(
       reportId: reportId ?? this.reportId,
@@ -116,8 +39,7 @@ class ReportModel {
       name: name ?? this.name,
       description: description ?? this.description,
       dateCreated: dateCreated ?? this.dateCreated,
-      reportTransactions:
-          reportTransactions ?? this.reportTransactions, // 🔑 Nuevo campo
+      reportTransactions: reportTransactions ?? this.reportTransactions,
     );
   }
 
@@ -131,7 +53,7 @@ class ReportModel {
       name: '',
       userId: '',
       dateCreated: DateTime.now(),
-      reportTransactions: {}, // 🔑 Inicializar como mapa vacío
+      reportTransactions: {},
     );
   }
 
@@ -139,7 +61,6 @@ class ReportModel {
   // 3. toJson (Para Firestore)
   // ----------------------------------------------------------------------
 
-  // Convierte los objetos ReportTransactionModel a Map<String, dynamic>
   Map<String, dynamic> _reportTransactionsToJson() {
     return reportTransactions.map(
       (key, value) => MapEntry(key, value.toJson()),
@@ -153,8 +74,7 @@ class ReportModel {
       'name': name,
       'description': description,
       'dateCreated': dateCreated, // Se guarda como Timestamp
-      'reportTransactions':
-          _reportTransactionsToJson(), // 🔑 Guardar el mapa de JSONs
+      'reportTransactions': _reportTransactionsToJson(),
     };
   }
 
@@ -188,7 +108,7 @@ class ReportModel {
       name: json['name'] as String,
       description: json['description'] as String?,
       dateCreated: dateCreated,
-      reportTransactions: transactionsMap, // 🔑 Usar el mapa de objetos
+      reportTransactions: transactionsMap,
     );
   }
 }

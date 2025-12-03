@@ -70,7 +70,7 @@ class ReportsProvider extends ChangeNotifier {
   }
 
   //====================================================================
-  // ☁️ FIREBASE/PAGINACIÓN
+  //FIREBASE/PAGINACIÓN
   //====================================================================
 
   /// Carga el primer lote de informes (Página 1).
@@ -88,6 +88,20 @@ class ReportsProvider extends ChangeNotifier {
 
     _isLoadingInitial = false;
     notifyListeners();
+  }
+
+  /// Busca y devuelve la versión más reciente del Reporte por su ID.
+  /// Si no lo encuentra, lanza una excepción o devuelve el ReportModel inicial.
+  ReportModel getReportById(String reportId) {
+    try {
+      return _reports.firstWhere((report) => report.reportId == reportId);
+    } catch (e) {
+      debugPrint(
+        'Error: Reporte con ID $reportId no encontrado en el Provider. $e',
+      );
+
+      return ReportModel.empty();
+    }
   }
 
   /// Carga la siguiente página de informes.
@@ -128,6 +142,9 @@ class ReportsProvider extends ChangeNotifier {
     }
   }
 
+  /// Añade un ReportTransactionModel creado manualmente (desde ReportTransactionCreatePage)
+  /// al mapa incrustado del ReportModel y lo persiste.
+
   //====================================================================
   // CRUD ACCIONES
   //====================================================================
@@ -155,9 +172,9 @@ class ReportsProvider extends ChangeNotifier {
     required ReportModel report,
     required TransactionModel transactionmodel,
   }) async {
-    //∫ 1. GENERAR UN NUEVO ID ÚNICO
+    //1. GENERAR UN NUEVO ID ÚNICO
     // Necesitamos un ID nuevo porque esta es una nueva entrada independiente en Firestore.
-    // Asumo que tu ReportsController o Service tiene una forma de generar IDs de documentos (ej: reportsService.reportsRef.doc().id)
+
     final String newReportTransactionId = _controller
         .getUniqueReportTransactionId();
 
@@ -199,6 +216,130 @@ class ReportsProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> removeTransactionsOfReport({
+    required BuildContext context,
+    required ReportModel report,
+    required List<String> transactionsIds,
+  }) async {
+    try {
+      // 1. Clonar el mapa de transacciones existente para mantener la inmutabilidad
+      final updatedMap = Map<String, ReportTransactionModel>.from(
+        report.reportTransactions,
+      );
+
+      // 2.ELIMINAR las transacciones usando la lista de IDs
+      for (final id in transactionsIds) {
+        // remove() elimina la entrada con la clave dada. Si la clave no existe, no hace nada.
+        updatedMap.remove(id);
+      }
+
+      // 3. Crear el ReportModel actualizado (usando copyWith)
+      final updatedReport = report.copyWith(reportTransactions: updatedMap);
+
+      // 4. Persistir el cambio vía el Controller (Esto llama a ReportsService.updateReport)
+      await _controller.updateReport(
+        context: context,
+        updatedReport: updatedReport,
+      );
+
+      // 5. Actualizar la lista local (_reports) y notificar a la UI
+      // Esto asume que _reports es la lista interna de ReportModel que gestiona tu Provider.
+      final index = _reports.indexWhere((r) => r.reportId == report.reportId);
+      if (index != -1) {
+        _reports[index] = updatedReport;
+        notifyListeners(); // Notifica a los oyentes (ej., ReportReadPage)
+      }
+    } catch (e) {
+      debugPrint('Error al eliminar transacciones del informe: $e');
+      // Opcional: AppUtils.showError(context, 'Fallo al eliminar transacciones del informe.');
+      rethrow;
+    }
+  }
+
+  Future<void> addManualReportTransaction({
+    required BuildContext context,
+    required ReportModel report,
+    required ReportTransactionModel newTransaction,
+  }) async {
+    try {
+      // 1. Clonar el mapa de transacciones existente para mantener la inmutabilidad
+      final updatedMap = Map<String, ReportTransactionModel>.from(
+        report.reportTransactions,
+      );
+
+      // 2. Insertar el objeto completo en el mapa usando su ID como clave
+      // Esto es lo que permite que la transacción quede incrustada.
+      updatedMap[newTransaction.reportTransactionId] = newTransaction;
+
+      // 3. Crear el ReportModel actualizado
+      final updatedReport = report.copyWith(reportTransactions: updatedMap);
+
+      // 4. Persistir el cambio vía el Controller
+      // El _controller se encarga de llamar al ReportsService.updateReport(...)
+      await _controller.updateReport(
+        context: context,
+        updatedReport: updatedReport,
+      );
+
+      // 5. Actualizar la lista local (_reports) y notificar a la UI
+      final index = _reports.indexWhere((r) => r.reportId == report.reportId);
+      if (index != -1) {
+        _reports[index] = updatedReport;
+        notifyListeners();
+        // Opcional: AppUtils.showSuccess(context, 'Movimiento manual añadido con éxito.');
+      }
+    } catch (e) {
+      debugPrint('Error al añadir movimiento manual al informe: $e');
+      // Opcional: AppUtils.showError(context, 'Fallo al guardar el movimiento en el informe.');
+      // Re-lanzar para que la UI pueda manejarlo si es necesario.
+      rethrow;
+    }
+  }
+
+  Future<void> updateReportTransaction({
+    required BuildContext context,
+    required ReportModel report, // El informe actual
+    required ReportTransactionModel
+    updatedTransaction, // La transacción con los cambios
+  }) async {
+    // 1. Clonar el mapa de transacciones existente
+    final updatedMap = Map<String, ReportTransactionModel>.from(
+      report.reportTransactions,
+    );
+
+    // 2. Reemplazar la transacción en el mapa usando su ID como clave
+    // Esto sobrescribe la versión antigua con la nueva versión (updatedTransaction)
+    if (updatedMap.containsKey(updatedTransaction.reportTransactionId)) {
+      updatedMap[updatedTransaction.reportTransactionId] = updatedTransaction;
+    } else {
+      // Manejar el error si se intenta editar una transacción que no existe
+      debugPrint('Error: Transaction ID not found in report map.');
+      return;
+    }
+
+    // 3. Crear el ReportModel actualizado con el mapa modificado
+    final updatedReport = report.copyWith(reportTransactions: updatedMap);
+
+    try {
+      // 4. Persistir el cambio vía el Controller
+      await _controller.updateReport(
+        context: context,
+        updatedReport: updatedReport,
+      );
+
+      // 5. Actualizar la lista local y notificar
+      final index = _reports.indexWhere((r) => r.reportId == report.reportId);
+      if (index != -1) {
+        _reports[index] = updatedReport;
+        notifyListeners();
+      }
+      // Opcional: AppUtils.showSuccess(context, 'Transacción del informe actualizada.');
+    } catch (e) {
+      debugPrint('Error al actualizar transacción del informe: $e');
+      // Opcional: AppUtils.showError(context, 'Fallo al actualizar la transacción.');
+    }
+  }
+
   /// Elimina un informe y actualiza la lista.
   Future<void> deleteReportAndUpdate({
     required BuildContext context,
@@ -217,7 +358,7 @@ class ReportsProvider extends ChangeNotifier {
     }
   }
 
-  // 🗑️ Elimina múltiples informes
+  // Elimina múltiples informes
   Future<void> deleteSelectedReportsAndUpdate({
     required BuildContext context,
   }) async {

@@ -107,11 +107,9 @@ class ReportsService {
         reportId: newTReportId,
       );
 
-      final DocumentReference docRef = await _reportsRef.add(
-        newreportmodel.toJson(),
-      );
+      await newDocRef.set(newreportmodel.toJson());
 
-      debugPrint('✅ Nuevo informe creado con ID: ${docRef.id}');
+      debugPrint('✅ Nuevo informe creado con ID: $newTReportId');
     } catch (e) {
       // 4. Manejo de errores
       debugPrint('🚨 Error al crear el nuevo informe en Firestore: $e');

@@ -186,7 +186,6 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                 textColor: colorScheme.onPrimary,
                 text: "Añadir a un informe",
                 onPressed: () {
-                  // Transacción actual que se va a añadir
                   final TransactionModel currentTransaction =
                       widget.transactionModel;
 
