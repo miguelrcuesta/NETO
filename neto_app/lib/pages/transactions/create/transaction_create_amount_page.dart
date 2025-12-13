@@ -1,27 +1,30 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_enums.dart';
-import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/models/reports_model.dart';
 import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
+import 'package:neto_app/provider/transaction_provider.dart';
 import 'package:neto_app/services/api.dart';
-import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
-import 'package:neto_app/widgets/app_fields.dart';
 import 'package:neto_app/widgets/widgets.dart';
+import 'package:provider/provider.dart';
 
 // Si no tienes estos métodos, DEBES implementarlos o el código fallará.
 
 class TransactionAmountCreatePage extends StatefulWidget {
   final bool isEditable;
+  final bool isForReport;
   final TransactionModel? transactionModel;
+  final ReportModel? reportModel;
   const TransactionAmountCreatePage({
     super.key,
     this.transactionModel,
+    this.reportModel,
     required this.isEditable,
+    required this.isForReport,
   });
 
   @override
@@ -34,37 +37,68 @@ class _TransactionAmountCreatePageState
   //#####################################################################################
   //CONTROLLERS
   //#####################################################################################
-  TextEditingController descriptionTransactiontextController =
-      TextEditingController();
-  String? descripcion;
+  TextEditingController descriptionController = TextEditingController();
+  TextEditingController amountController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final FocusNode _amountFocusNode = FocusNode();
 
   //#####################################################################################
   //VARIABLES
   //#####################################################################################
-  String amountString = '';
-  String transactionType = TransactionType.expense.id;
+  DateTime selectedDate = DateTime.now();
+
+  //GEMINI
   Map<String, String>? sugerenciaGemini;
 
+  bool isLoading = false;
+  bool hasError = false;
+  bool hasSuccess = false;
   final Locale currentLocale = AppFormatters.getPlatformLocale();
 
-  String? subcategoryGasto;
-  String? subcategoryIngreso;
+  //BBDD
+  String amountString = '';
+
+  double amount = 0.0;
+  String? descripcion;
   String? selectedCategoryId;
   String? selectedCategoryChoice;
   String? selectedSubcategoryChoice;
-  bool isLoading = false;
-  Timer? _debounceTimer;
+  TransactionType? transactionType = TransactionType.expense;
   late TransactionModel transactionModel;
 
   //#####################################################################################
   //FUNCIONES
   //#####################################################################################
 
-  void _updateAmount(String newAmount) {
-    setState(() {
-      amountString = newAmount;
-    });
+  void _updateAmount(AmountUpdate update) {
+    final String newAmountString = update.newAmount;
+    final UpdateDirection direction = update.direction;
+
+    // Define el límite máximo de caracteres para el monto.
+    const int maxLength = 10;
+
+    // 1. Manejo de la acción de BORRADO (DELETE)
+    // Siempre se permite la actualización si se borra un dígito.
+    if (direction == UpdateDirection.delete) {
+      setState(() {
+        amountString = newAmountString;
+        amount = double.tryParse(amountString) ?? 0.0;
+      });
+      return;
+    }
+
+    // 2. Manejo de la acción de AÑADIR (ADD)
+    // Se aplica la restricción de longitud.
+    if (direction == UpdateDirection.add) {
+      // 🔑 Solo actualizamos si la nueva cadena NO excede el límite.
+      if (newAmountString.length <= maxLength) {
+        setState(() {
+          amountString = newAmountString;
+          amount = double.tryParse(amountString) ?? 0.0;
+        });
+      }
+      // Si la longitud es > 10, simplemente se ignora la pulsación (no se llama a setState).
+    }
   }
 
   Future<void> fetchNewIACategory(String transactionDescription) async {
@@ -80,7 +114,10 @@ class _TransactionAmountCreatePageState
         transactionDescription,
         currentLocale.languageCode,
       );
+      debugPrint('Intentando clasificar: $classificationResult');
     } catch (e) {
+      hasError = true;
+      hasSuccess = false;
       // Manejo de errores de red o servicio
       debugPrint('⚠️ Error al contactar al servicio de IA: $e');
     }
@@ -102,12 +139,16 @@ class _TransactionAmountCreatePageState
 
         if (iaStatus == 'SUCCESS') {
           debugPrint('✅ Clasificación IA Exitosa: $category / $subcategory');
+          hasSuccess = false;
+          hasError = false;
           updateSelectedChoice(
             idCategory,
             category,
             subcategory,
           ); // Asignar a los campos de la UI
         } else {
+          hasError = true;
+          hasSuccess = false;
           isLoading = false;
           debugPrint('⚠️ Clasificación IA Fallida. Estado: $iaStatus');
         }
@@ -142,108 +183,108 @@ class _TransactionAmountCreatePageState
     });
   }
 
+  // Future<void> _saveTransaction() async {
+  //   if (!(_formKey.currentState?.validate() ?? false)) {
+  //     return;
+  //   }
+
+  //   final provider = context.read<ReportsProvider>();
+  //   final double amount = double.parse(amountController.text.trim());
+
+  //   final String newTransactionId = reportsController
+  //       .getUniqueReportTransactionId();
+
+  //   final ReportTransactionModel newReportTransaction = ReportTransactionModel(
+  //     reportTransactionId: newTransactionId,
+  //     reportId: widget.reportModel.reportId,
+  //     amount: amount,
+  //     description: descriptionController.text.trim(),
+  //     date: selectedDate,
+  //     typeId: selectedTransactionType,
+  //     categoryId: selectedCategoryId ?? '',
+  //   );
+
+  //   await provider.addManualReportTransaction(
+  //     context: context,
+  //     report: widget.reportModel,
+  //     newTransaction: newReportTransaction,
+  //   );
+
+  //   if (!mounted) return;
+  //   Navigator.pop(context);
+  // }
+
   @override
   void initState() {
     transactionModel = widget.transactionModel ?? TransactionModel.empty();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Usamos el FocusScope del contexto actual para solicitar el foco
+      FocusScope.of(context).requestFocus(_amountFocusNode);
+    });
+
+    //SI ES EDITABLE, ES DECIR YA TIENE DATOS LOS RE
     if (widget.transactionModel != null && widget.isEditable) {
-      final t = widget.transactionModel!;
-      // Prefill amount (use simple string representation; formatting happens in build)
-      amountString = t.amount.toString();
-      // Prefill description
-      descriptionTransactiontextController.text = t.description ?? '';
-      descripcion = t.description;
-      // Prefill category / subcategory
-      selectedCategoryId = t.categoryid;
-      selectedCategoryChoice = t.category;
-      selectedSubcategoryChoice = t.subcategory;
-      // Prefill type
-      transactionType = t.type;
+      final model = widget.transactionModel!;
+      // amount
+      amount = model.amount;
+      amountString = model.amount.toStringAsFixed(2);
+      // _updateAmount(amountString);
+      amountController.text = amountString;
+      // description
+      descriptionController.text = model.description ?? '';
+      descripcion = model.description;
+      //category / subcategory
+      selectedCategoryId = model.categoryid;
+      selectedCategoryChoice = model.category;
+      selectedSubcategoryChoice = model.subcategory;
+      // tipo
+      transactionType = TransactionType.getById(model.type);
+
+      //Fecha
+      selectedDate = widget.transactionModel!.date!;
     }
 
     super.initState();
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final double amount =
-        double.tryParse(amountString.replaceAll(',', '.')) ?? 0;
+    final TransactionsProvider provider = context.read<TransactionsProvider>();
+
     ColorScheme colorScheme = Theme.of(context).colorScheme;
-    TextTheme textTheme = Theme.of(context).textTheme;
-    AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    final amountFormatter = AppFormatters.getLocalizedNumberFormatterByLocale(
-      currentLocale,
-    );
-    final String symbol = AppFormatters.getCurrencySymbolByLocale(
-      currentLocale,
-    );
-
-    String formattedAmount;
-
-    if (amountString.isEmpty) {
-      formattedAmount = amountFormatter.format(amount);
-    } else if (amountString.contains('.') &&
-        amountString.split('.').length == 2) {
-      formattedAmount = amountString;
-      formattedAmount = amountFormatter.format(amount);
-    } else {
-      formattedAmount = amountString;
-    }
-
-    final Map<String, Widget> myTabs = <String, Widget>{
-      TransactionType.expense.id: Text(appLocalizations.typeExpense),
-      TransactionType.income.id: Text(appLocalizations.typeIncome),
-    };
+    //TextTheme textTheme = Theme.of(context).textTheme;
+    //AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
       //appBar: AppBar(),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 800),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: AppDimensions.spacingLarge),
-                    _typetransaction(colorScheme, myTabs),
-                    const SizedBox(height: AppDimensions.spacingLarge),
-                    Container(
-                      padding: EdgeInsets.all(20.0),
-                      decoration: decorationContainer(
-                        context: context,
-                        colorFilled: colorScheme.primaryContainer,
-                        radius: 20,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          _amount(
-                            formattedAmount,
-                            textTheme,
-                            amount,
-                            colorScheme,
-                            symbol,
-                          ),
-                          _descriptionamount(textTheme, colorScheme),
-                          const SizedBox(height: AppDimensions.spacingSmall),
-                          _geminiCategory(textTheme, colorScheme),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spacingExtraLarge),
-                    TransactionKeyBoardWidget(
-                      initialAmount: amountString,
-                      onAmountChange: _updateAmount,
-                    ),
-                  ],
-                ),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: AppDimensions.spacingLarge),
+
+                  _widgetAmount(),
+
+                  TransactionKeyBoardWidget(
+                    initialAmount: amountString,
+                    onAmountChange: _updateAmount,
+                  ),
+                ],
               ),
             ),
           ),
@@ -266,22 +307,12 @@ class _TransactionAmountCreatePageState
                   'StandarButton pressed on TransactionAmountCreatePage',
                 );
 
-                transactionModel = transactionModel.copyWith(
-                  amount: amount,
-                  categoryid: selectedCategoryId,
-                  category: selectedCategoryChoice,
-                  subcategory: selectedSubcategoryChoice,
-                  description: descripcion,
-                  type: transactionType,
-                );
-
-                ///Si ese argumento venia como nulo... significa que hay que editar y no crear.
-                ///Esta condicion se realiza dentreo del Amount y Details :)
-                ///
+                transactionModel = transactionModel.copyWith(amount: amount);
 
                 await showCupertinoModalPopup<void>(
                   context: context,
                   builder: (context) {
+                    TextTheme textTheme = Theme.of(context).textTheme;
                     return CupertinoPageScaffold(
                       navigationBar: CupertinoNavigationBar(
                         leading: TextButton(
@@ -296,13 +327,22 @@ class _TransactionAmountCreatePageState
                           ),
                         ),
                       ),
-                      child: TransactionCreateDetailsPage(
+                      child: TransactionDetailsCreatePage(
                         isEditable: widget.isEditable,
+                        isForReport: widget.isForReport,
+                        reportModel: widget.reportModel,
                         transactionModel: transactionModel,
                       ),
                     );
                   },
                 );
+
+                if (!context.mounted) return;
+                // Cerramos todos los modales y volvemos a la primera ruta (TransactionsReadPage)
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).popUntil((route) => route.isFirst);
               }
             },
             text: "Siguiente",
@@ -316,492 +356,10 @@ class _TransactionAmountCreatePageState
   // WIDGETS
   //#####################################################################################
 
-  Row _geminiCategory(TextTheme textTheme, ColorScheme colorScheme) {
-    // Determinar qué categoría se debe mostrar
-    String displayCategory = "Sin categoría";
-
-    if (selectedCategoryChoice != null) {
-      // Intenta obtener el nombre legible usando el getter de la extensión (asumiendo su existencia)
-      if (transactionType == TransactionType.expense.id) {
-        displayCategory =
-            Expenses.getCategoryById(selectedCategoryChoice!)?.nombre ??
-            selectedCategoryChoice!;
-      } else {
-        displayCategory =
-            Incomes.getCategoryById(selectedCategoryChoice!)?.nombre ??
-            selectedCategoryChoice!;
-      }
-
-      if (selectedSubcategoryChoice != null) {
-        displayCategory += " \n$selectedSubcategoryChoice";
-      }
-    }
-
-    return Row(
-      children: [
-        Expanded(
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-            minVerticalPadding: 0.0,
-            visualDensity: VisualDensity.compact,
-            //title: Text("Categoría", style: textTheme.titleSmall),
-            title: _geminiCategorySubtitle(
-              textTheme,
-              colorScheme,
-              displayCategory,
-            ), // Usamos la nueva variable
-          ),
-        ),
-        TextButton(
-          onPressed: () async {
-            await showModalBottomSheet(
-              context: context,
-              useSafeArea: true,
-              isScrollControlled: true,
-              builder: (context) {
-                return StatefulBuilder(
-                  builder: (context, myState) {
-                    Widget buildIngresoChips(Incomes choice) {
-                      // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
-                      // usamos la variable del state, pero no es necesario para la corrección del bug.
-                      bool isSelected;
-                      TextTheme textTheme = Theme.of(context).textTheme;
-                      ColorScheme colorScheme = Theme.of(context).colorScheme;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "${choice.emoji} ${choice.nombre}",
-                              style: textTheme.titleMedium,
-                            ),
-                            SizedBox(height: AppDimensions.spacingMedium),
-                            Wrap(
-                              spacing: 8.0,
-                              runSpacing: 8.0,
-                              children: List.generate(
-                                choice.subcategorias.length,
-                                (index) {
-                                  String subCategoria =
-                                      choice.subcategorias[index];
-                                  isSelected =
-                                      subcategoryIngreso ==
-                                      choice.subcategorias[index];
-                                  return ActionChip(
-                                    labelPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    label: Text(subCategoria),
-
-                                    backgroundColor: isSelected
-                                        ? colorScheme.primaryContainer
-                                        : colorScheme.surfaceBright,
-                                    labelStyle: TextStyle(
-                                      color: isSelected
-                                          ? colorScheme.primary
-                                          : Colors.grey.shade800,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    onPressed: () {
-                                      myState(() {
-                                        subcategoryIngreso =
-                                            choice.subcategorias[index];
-                                        updateSelectedChoice(
-                                          choice.id,
-                                          choice.nombre,
-                                          choice.subcategorias[index],
-                                        );
-                                        debugPrint(choice.nombre);
-                                        debugPrint(choice.subcategorias[index]);
-                                      });
-
-                                      //Navigator.pop(context, choice);
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    Widget buildGastoChips(Expenses choice) {
-                      // Si queremos que el chip muestre si está seleccionado *antes* de abrir el modal,
-                      // usamos la variable del state, pero no es necesario para la corrección del bug.
-                      bool isSelected;
-                      TextTheme textTheme = Theme.of(context).textTheme;
-                      ColorScheme colorScheme = Theme.of(context).colorScheme;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4.0,
-                          vertical: 4.0,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              choice.emoji + choice.nombre,
-                              style: textTheme.titleMedium,
-                            ),
-                            SizedBox(height: AppDimensions.spacingMedium),
-                            Wrap(
-                              spacing: 8.0,
-                              runSpacing: 8.0,
-                              children: List.generate(
-                                choice.subcategorias.length,
-                                (index) {
-                                  isSelected =
-                                      subcategoryGasto ==
-                                      choice.subcategorias[index];
-                                  String subCategoria =
-                                      choice.subcategorias[index];
-
-                                  return ActionChip(
-                                    labelPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    label: Text(subCategoria),
-
-                                    backgroundColor: isSelected
-                                        ? colorScheme.primaryContainer
-                                        : colorScheme.surface,
-                                    labelStyle: TextStyle(
-                                      color: isSelected
-                                          ? colorScheme.primary
-                                          : colorScheme.onSurface,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      side: BorderSide(
-                                        color: isSelected
-                                            ? colorScheme.primary
-                                            : Colors
-                                                  .grey
-                                                  .shade400, // Color del borde
-                                        width: isSelected
-                                            ? 1.5
-                                            : 1.0, // Grosor del borde
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      myState(() {
-                                        subcategoryGasto =
-                                            choice.subcategorias[index];
-                                        updateSelectedChoice(
-                                          choice.id,
-                                          choice.nombre,
-                                          choice.subcategorias[index],
-                                        );
-
-                                        debugPrint(choice.id);
-                                        debugPrint(choice.nombre);
-                                        debugPrint(choice.subcategorias[index]);
-                                      });
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return Scaffold(
-                      appBar: TitleAppbarBack(title: "Elige una categoría"),
-                      body: SingleChildScrollView(
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16.0),
-                          // Se usa mainAxisSize.min para ajustar la altura al contenido
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Categorías de Gasto
-                              if (transactionType == TransactionType.expense.id)
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  spacing: 8.0,
-
-                                  children: Expenses.values
-                                      .map(
-                                        (categoria) =>
-                                            buildGastoChips(categoria),
-                                      ) // Llama a la función que crea el Chip
-                                      .toList(),
-                                ),
-                              // Categorías de Ingreso
-                              if (transactionType == TransactionType.income.id)
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  spacing: 8.0,
-
-                                  children: Incomes.values
-                                      .map(
-                                        (categoria) =>
-                                            buildIngresoChips(categoria),
-                                      ) // Llama a la función que crea el Chip
-                                      .toList(),
-                                ),
-
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).viewInsets.bottom +
-                                    16,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          },
-          child: Text(
-            "Cambiar",
-            style: textTheme.bodySmall!.copyWith(color: colorScheme.primary),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _geminiCategorySubtitle(
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-    String displayCategory,
-  ) {
-    // Lógica para mostrar la categorización de Gemini o la selección del usuario
-    // if (isLoading) {
-    //   return Row(
-    //         children: [
-    //           const Icon(CupertinoIcons.sparkles, size: 18),
-    //           Text(
-    //             "Categorizando...",
-    //             style: textTheme.titleSmall!.copyWith(
-    //               color: colorScheme.primaryContainer,
-    //             ),
-    //           ),
-    //         ],
-    //       )
-    //       .animate(onPlay: (controller) => controller.repeat())
-    //       .shimmer(
-    //         duration: 1500.ms,
-    //         color: colorScheme.surface,
-    //         blendMode: BlendMode.colorDodge,
-    //       )
-    //       .fadeIn(duration: 800.ms, curve: Curves.easeOut)
-    //       .then(delay: 100.ms)
-    //       .fadeOut(duration: 800.ms, curve: Curves.easeIn);
-    // }
-
-    if (isLoading) {
-      return Row(
-            mainAxisSize:
-                MainAxisSize.min, // El contenedor se ajusta al contenido
-            children: [
-              // 1. Icono con un efecto de pulsación sutil
-              const Icon(CupertinoIcons.sparkles, size: 18)
-                  .animate(
-                    onPlay: (controller) => controller.repeat(reverse: true),
-                  )
-                  .scaleXY(
-                    end: 1.1,
-                    duration: 800.ms,
-                    curve: Curves.easeInOutSine,
-                  ),
-
-              const SizedBox(width: 8),
-
-              // 2. Texto de carga con el estilo de shimmer deseado
-              Text(
-                "Categorizando con IA...",
-                style: textTheme.titleSmall!.copyWith(
-                  // Usamos el color principal de la aplicación
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          )
-          // Aplicamos una animación base al Row para controlar la repetición
-          .animate(onPlay: (controller) => controller.repeat())
-          // 3. 🔑 CLAVE: El efecto de onda que pasa de un extremo al otro
-          // Esto es un 'wave' o 'shimmer' continuo que da sensación de actividad
-          .custom(
-            duration: 1800.ms,
-            builder: (context, value, child) {
-              // El valor 'value' va de 0.0 a 1.0, lo usamos para desplazar el degradado
-              final double wavePosition =
-                  value * 2.0 - 1.0; // Recorre de -1.0 a 1.0
-
-              return ShaderMask(
-                shaderCallback: (bounds) {
-                  // Crea un degradado linear que simula la onda de brillo
-                  return LinearGradient(
-                    begin: Alignment(wavePosition - 0.5, 0),
-                    end: Alignment(wavePosition + 0.5, 0),
-                    colors: [
-                      colorScheme.primary.withAlpha(70), // Color base
-                      colorScheme.primaryContainer.withAlpha(
-                        90,
-                      ), // Pico del brillo
-                      colorScheme.primary.withAlpha(98), // Color base
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ).createShader(bounds);
-                },
-                child: child, // El Row (Icono + Texto) es el hijo
-              );
-            },
-          );
-    }
-
-    if (selectedCategoryChoice != null || (sugerenciaGemini != null)) {
-      return Row(
-        children: [
-          const Icon(CupertinoIcons.sparkles, size: 18),
-          const SizedBox(width: 4),
-          Text(
-            displayCategory,
-            style: textTheme.titleSmall!.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Text(
-      "Sin categoría",
-      style: textTheme.titleSmall!.copyWith(
-        color: colorScheme.onSurfaceVariant,
-      ),
-    );
-  }
-
-  SizedBox _descriptionamount(TextTheme textTheme, ColorScheme colorScheme) {
-    final Duration debounceDuration = const Duration(milliseconds: 500);
-    return SizedBox(
-      width: 280,
-      child: SmallTextField(
-        textInputAction: TextInputAction.done,
-        onChange: (value) async {
-          if (_debounceTimer?.isActive ?? false) {
-            _debounceTimer!.cancel();
-          }
-          if (value.isNotEmpty) {
-            _debounceTimer = Timer(debounceDuration, () async {
-              await getGeminiCategory(value);
-            });
-          }
-          setState(() {
-            descripcion = value;
-          });
-        },
-        enable: true,
-        controller: descriptionTransactiontextController,
-        textInputType: TextInputType.text,
-        hintText: "supermercado",
-        textAlign: TextAlign.center,
-        textInputTheme: textTheme.bodyMedium!.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
-        colorFocusBorder: Colors.transparent,
-        validator: (value) {
-          if (value == null || value.trim().isEmpty) {
-            return 'La descripción es obligatoria';
-          }
-          return null;
-        },
-      ),
-    );
-  }
-
-  SizedBox _amount(
-    String formattedAmount,
-    TextTheme textTheme,
-    double amount,
-    ColorScheme colorScheme,
-    String symbol,
-  ) {
-    return SizedBox(
-      width: 350,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            alignment: Alignment.center,
-            width: 280,
-            child: Text(
-              formattedAmount,
-              softWrap: true,
-              overflow: TextOverflow.ellipsis,
-              style: amountString.isNotEmpty
-                  ? textTheme.titleLarge!.copyWith(
-                      fontSize: AppDimensions.getFontSizeByLength(amount),
-                      fontWeight: FontWeight.bold,
-                    )
-                  : textTheme.titleLarge!.copyWith(
-                      fontSize: AppDimensions.getFontSizeByLength(amount),
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-            ),
-          ),
-          // Text(
-          //   symbol,
-          //   style: textTheme.titleLarge!.copyWith(
-          //     fontSize: 30,
-          //     color: colorScheme.onSurfaceVariant,
-          //   ),
-          // ),
-        ],
-      ),
-    );
-  }
-
-  SizedBox _typetransaction(
-    ColorScheme colorScheme,
-    Map<String, Widget> myTabs,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      child: CupertinoSlidingSegmentedControl<String>(
-        proportionalWidth: true,
-        groupValue: transactionType,
-        thumbColor: colorScheme.primaryContainer,
-        backgroundColor: Colors.grey.shade200,
-        children: myTabs,
-        onValueChanged: (String? newValue) {
-          if (newValue != null) {
-            setState(() {
-              transactionType = newValue;
-              selectedCategoryChoice = null;
-              selectedSubcategoryChoice = null;
-            });
-          }
-          debugPrint(transactionType.toString());
-        },
-      ),
-    );
+  //=========================================================================
+  //AMOUNT
+  //=========================================================================
+  Widget _widgetAmount() {
+    return AmountDisplayWidget(fullAmount: amountString, phantomDecimal: '');
   }
 }

@@ -5,7 +5,7 @@ import 'package:neto_app/models/transaction_model.dart';
 // Importa tus utilidades de Snackbar si es necesario, aunque el Provider se enfoca en el estado.
 
 class TransactionsProvider extends ChangeNotifier {
-  // 1. 🔑 Inyección de dependencia (Tu Controller)
+  // 1.Inyección de dependencia (Tu Controller)
   final TransactionController _controller;
 
   TransactionsProvider() : _controller = TransactionController();
@@ -38,7 +38,7 @@ class TransactionsProvider extends ChangeNotifier {
   bool get isMultiselectActive => _transactionsSelected.isNotEmpty;
 
   //====================================================================
-  // 🔑 LÓGICA DE SELECCIÓN 🔑
+  //LÓGICA DE SELECCIÓN 🔑
   //====================================================================
 
   /// Añade o elimina el ID de una transacción de la lista de seleccionados
@@ -52,7 +52,7 @@ class TransactionsProvider extends ChangeNotifier {
     } else {
       _transactionsSelected.add(id);
     }
-    notifyListeners(); // 📢 Notifica el cambio de selección
+    notifyListeners(); //  Notifica el cambio de selección
   }
 
   /// Limpia la lista de seleccionados y desactiva el modo multiselección.
@@ -67,8 +67,10 @@ class TransactionsProvider extends ChangeNotifier {
 
   /// 1. Carga el primer lote de transacciones.
   Future<void> loadInitialTransactions() async {
+    debugPrint("Llamando al provider: loadInitialTransactions");
     // Evita recargar si ya hay datos y no se necesita refresh
-    if (_transactions.isNotEmpty || _isLoadingInitial) return;
+    // if (_transactions.isNotEmpty || _isLoadingInitial) return;
+    if (_isLoadingInitial) return;
 
     _isLoadingInitial = true;
     notifyListeners();
@@ -139,6 +141,7 @@ class TransactionsProvider extends ChangeNotifier {
     // 2. Actualizar la lista en memoria (Se asume que la transacción fue exitosa)
     // Se añade al principio para que sea visible inmediatamente.
     _transactions.insert(0, newTransaction);
+    _transactions.sort((a, b) => b.date!.compareTo(a.date!));
     notifyListeners();
   }
 

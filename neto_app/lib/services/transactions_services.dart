@@ -131,12 +131,16 @@ class TransactionService {
   // =========================================================
 
   /// Guarda una nueva transacción en Firestore y maneja errores.
-  Future<String?> createTransaction(TransactionModel transaction) async {
+  Future<String?> createTransaction(
+    TransactionModel transaction,
+    String userId,
+  ) async {
     try {
       final newDocRef = _transactionsRef.doc();
       final newTransactionId = newDocRef.id;
 
       final transactionWithId = transaction.copyWith(
+        userId: userId,
         transactionId: newTransactionId,
         date: transaction.date ?? DateTime.now(),
       );

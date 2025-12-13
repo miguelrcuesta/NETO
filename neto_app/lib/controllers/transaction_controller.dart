@@ -88,7 +88,10 @@ class TransactionController {
   }) async {
     try {
       debugPrint("Llamando al controller: createNewTransaction");
-      final newId = await _transactionService.createTransaction(newTransaction);
+      final newId = await _transactionService.createTransaction(
+        newTransaction,
+        _currentUserId,
+      );
 
       if (newId != null) {
         if (!context.mounted) return;

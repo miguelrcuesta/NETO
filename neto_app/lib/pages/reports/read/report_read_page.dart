@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_enums.dart';
+import 'package:neto_app/pages/transactions/create/transaction_create_amount_page.dart';
 import 'package:neto_app/provider/reports_provider.dart';
+import 'package:neto_app/widgets/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/pages/reports/create/report_transaction_create_page.dart';
@@ -202,47 +204,13 @@ class _ReportReadPageState extends State<ReportReadPage>
     // Si estamos en modo de selección, deshabilitamos el Dismissible
     final bool enableDismiss = !_isSelectionMode;
 
-    Widget listTile = Container(
-      padding: EdgeInsets.symmetric(vertical: 12.0),
-      child: CupertinoListTile(
-        padding: const EdgeInsets.only(left: 10, right: 40),
-
-        leading: ClipRRect(
-          child: Container(
-            width: 45,
-            height: 45,
-            decoration: decorationContainer(
-              context: context,
-              colorFilled: category.color.withAlpha(30),
-              radius: 100,
-            ),
-            child: Icon(category.iconData, size: 15, color: category.color),
-          ),
-        ),
-
-        title: Text(
-          transaction.description,
-          style: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurface),
-        ),
-        subtitle: Text(
-          AppFormatters.customDateFormatShort(transaction.date),
-          style: textTheme.bodyMedium!.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        trailing: SizedBox(
-          width: 90,
-          child: Text(
-            textAlign: TextAlign.end,
-            overflow: TextOverflow.ellipsis,
-            transaction.amount.toStringAsFixed(2),
-            style: textTheme.bodyMedium!.copyWith(
-              color:
-                  colorScheme.onSurfaceVariant, // Color del tipo de transacción
-            ),
-          ),
-        ),
-      ),
+    Widget listTile = TransactionCardSmall(
+      isSelected: isSelected,
+      idCategory: transaction.categoryId,
+      type: transaction.typeId,
+      title: transaction.description,
+      subtitle: AppFormatters.customDateFormatShort(transaction.date),
+      amount: transaction.amount.toStringAsFixed(2),
     );
 
     // ENVOLVER EN UN GESTURE DETECTOR PARA ACTIVAR/SELECCIONAR
@@ -258,19 +226,12 @@ class _ReportReadPageState extends State<ReportReadPage>
           // Navigator.push(...);
         }
       },
-      child: Container(
+      child: SizedBox(
         // Efecto visual al seleccionar
         child: Row(
           children: [
             // Mostrar checkbox si está en modo selección
             if (_isSelectionMode)
-              // Padding(
-              //   padding: const EdgeInsets.only(left: 8.0),
-              //   child: CupertinoCheckbox(
-              //     value: isSelected,
-              //     onChanged: (val) => _toggleSelection(transaction),
-              //   ),
-              // ),
               if (isSelected)
                 IconButton(
                   onPressed: () {
@@ -495,13 +456,46 @@ class _ReportReadPageState extends State<ReportReadPage>
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (BuildContext context) =>
-                      ReportTransactionCreatePage(reportModel: currentReport),
-                ),
+            onPressed: () async {
+              await showCupertinoModalPopup(
+                barrierDismissible: false,
+                context: context,
+                builder: (context) {
+                  //BOTON DE CREAR
+                  return CupertinoPageScaffold(
+                    backgroundColor: colorScheme.surface,
+                    navigationBar: CupertinoNavigationBar(
+                      leading: TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "Atrás",
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall!.copyWith(color: Colors.blue),
+                        ),
+                      ),
+                      bottom: PreferredSize(
+                        preferredSize: Size(double.infinity, 100),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                          child: Text(
+                            style: textTheme.bodySmall!.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            'Añade un movimiento solo al informe sin afectar a tus gastos/ingresos.\n\nPuedes añadir cualquier movimiento ya creado',
+                          ),
+                        ),
+                      ),
+                    ),
+                    child: TransactionAmountCreatePage(
+                      isEditable: false,
+                      isForReport: true,
+                      reportModel: widget.reportModel,
+                    ),
+                  );
+                },
               );
             },
             icon: Icon(CupertinoIcons.add, color: colorScheme.primary),
@@ -534,7 +528,6 @@ class _ReportReadPageState extends State<ReportReadPage>
     );
   }
 
-  // ... (El resto del código de _buildTransactionsTab se mantiene igual)
   Widget _buildTransactionsTab(
     BuildContext context,
     ColorScheme colorScheme,

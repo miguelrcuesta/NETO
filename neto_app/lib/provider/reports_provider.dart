@@ -14,7 +14,7 @@ class PaginatedReportResult {
 }
 
 class ReportsProvider extends ChangeNotifier {
-  // 1. 🔑 Inyección de dependencia (Tu Controller)
+  // 1. Inyección de dependencia (Tu Controller)
   final ReportsController _controller;
 
   // Puedes inyectar el controller o crearlo directamente
@@ -26,11 +26,11 @@ class ReportsProvider extends ChangeNotifier {
 
   List<ReportModel> _reports = [];
 
-  // ⭐️ Paginación
+  // Paginación
   DocumentSnapshot? _lastDocument; // Puntero para la siguiente página
   bool _hasMore = true; // Flag para saber si hay más datos en Firestore
 
-  // ⭐️ Estados de Carga
+  // Estados de Carga
   bool _isLoadingInitial = false;
   bool _isLoadingMore = false;
 
@@ -49,7 +49,7 @@ class ReportsProvider extends ChangeNotifier {
   bool get isMultiselectActive => _reportsSelected.isNotEmpty;
 
   //====================================================================
-  // 🔑 LÓGICA DE SELECCIÓN (Similar a Transactions) 🔑
+  //LÓGICA DE SELECCIÓN (Similar a Transactions) 🔑
   //====================================================================
 
   /// Añade o elimina el ID de un informe de la lista de seleccionados.

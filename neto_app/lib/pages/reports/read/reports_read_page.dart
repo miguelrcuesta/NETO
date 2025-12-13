@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // 🔑 Importar Provider
-import 'package:neto_app/provider/reports_provider.dart'; // 🔑 Nuevo Provider
+import 'package:provider/provider.dart'; //Importar Provider
+import 'package:neto_app/provider/reports_provider.dart'; //Nuevo Provider
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/controllers/reports_controller.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
@@ -46,7 +46,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
   // FUNCIONES
   //########################################################################
 
-  // 🔑 Llama a clearSelection() en el Provider para limpiar la selección
+  //Llama a clearSelection() en el Provider para limpiar la selección
   void _updateNotSelectableUI() {
     context.read<ReportsProvider>().clearSelection();
   }
@@ -57,7 +57,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
   @override
   void initState() {
     super.initState();
-    // 🔑 Iniciar la carga de informes al inicio usando el Provider
+    //Iniciar la carga de informes al inicio usando el Provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ReportsProvider>().loadInitialReports();
     });
@@ -69,11 +69,11 @@ class _ReportsReadPageState extends State<ReportsReadPage>
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      // 🔑 AppBar reactivo (usa context.watch)
+      //AppBar reactivo (usa context.watch)
       appBar: _buildReactiveAppBar(context),
       body: Padding(
         padding: AppDimensions.paddingStandard,
-        child: _buildReportsView(context), // 🔑 Vista reactiva (usa Consumer)
+        child: _buildReportsView(context), //Vista reactiva (usa Consumer)
       ),
       floatingActionButton: ClipOval(
         child: FloatingActionButton(
@@ -87,7 +87,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
               builder: (context) => ReportCreatePage(),
             );
             if (!context.mounted) return;
-            // 🔑 Tras cerrar el modal (si se creó algo), refrescamos la lista
+            //Tras cerrar el modal (si se creó algo), refrescamos la lista
             context.read<ReportsProvider>().loadInitialReports();
           },
           backgroundColor: colorScheme.primary,
@@ -98,14 +98,14 @@ class _ReportsReadPageState extends State<ReportsReadPage>
     );
   }
 
-  // 🔑 Método para construir el AppBar de forma reactiva (usa context.watch)
+  //Método para construir el AppBar de forma reactiva (usa context.watch)
   PreferredSizeWidget? _buildReactiveAppBar(BuildContext context) {
     if (!widget.showAppBar) return null;
 
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    // 🔑 context.watch fuerza la reconstrucción de este método (y por ende del AppBar)
+    //context.watch fuerza la reconstrucción de este método (y por ende del AppBar)
     final provider = context.watch<ReportsProvider>();
 
     final isMultiselectActive = provider.isMultiselectActive;
@@ -141,7 +141,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
     }
   }
 
-  // 🔑 Método de visualización de informes (reemplaza _buildFutureReports)
+  //Método de visualización de informes (reemplaza _buildFutureReports)
   Widget _buildReportsView(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
@@ -214,7 +214,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
 
                 final report = reports[index];
 
-                // 🔑 Usamos el Set del Provider para saber si está seleccionado
+                //Usamos el Set del Provider para saber si está seleccionado
                 bool isSelected = provider.reportsSelected.contains(
                   report.reportId,
                 );
@@ -223,11 +223,11 @@ class _ReportsReadPageState extends State<ReportsReadPage>
                   padding: const EdgeInsets.symmetric(vertical: 5.0),
                   child: GestureDetector(
                     onLongPress: () {
-                      // 🔑 Inicia el modo multiselección y selecciona el elemento
+                      //Inicia el modo multiselección y selecciona el elemento
                       provider.toggleReportSelection(report);
                     },
                     onTap: () {
-                      // 🔑 Si está activo, selecciona/deselecciona. Si no, navega.
+                      //Si está activo, selecciona/deselecciona. Si no, navega.
                       if (isMultiselectActive) {
                         provider.toggleReportSelection(report);
                       } else {
@@ -246,7 +246,7 @@ class _ReportsReadPageState extends State<ReportsReadPage>
                       dateText: AppFormatters.customDateFormatShort(
                         report.dateCreated,
                       ),
-                      isSelected: isSelected, // 🔑 PROPIEDAD REQUERIDA
+                      isSelected: isSelected,
                     ),
                   ),
                 );

@@ -24,7 +24,6 @@ enum TransactionType {
     try {
       return TransactionType.values.firstWhere((type) => type.id == id);
     } catch (e) {
-      // Retorna null o lanza un error si el ID no es válido.
       return null;
     }
   }
@@ -92,7 +91,7 @@ enum Expenses {
       'Comida Rápida',
       'Cafeterías y Bares',
     ],
-    color: Colors.grey,
+    color: Colors.pink,
   ),
   transporte(
     id: 'TRANSPORTE',
@@ -293,6 +292,94 @@ enum Incomes {
   });
 }
 
+class CategoryTransaction {
+  TransactionType type;
+
+  CategoryTransaction({required this.type});
+
+  static getCategoryByTransaction(TransactionType type) {
+    if (type == TransactionType.expense) {
+      return Expenses;
+    } else {
+      return Incomes;
+    }
+  }
+}
+
+///#####################################################################
+///#####################################################################
+///Networth ASSETS
+///#####################################################################
+///#####################################################################
+enum NetWorthAssetType { bankAccount, investment, longTermAsset }
+
+// 2. Extensión para añadir Propiedades (Icono, Color, Nombre)
+extension NetWorthAssetTypeDetails on NetWorthAssetType {
+  /// Convierte una cadena (ID) de activo en el miembro de enum NetWorthAssetType correspondiente.
+  ///
+  /// Utiliza el método byName() para buscar la coincidencia.
+  /// Lanza una excepción si el ID no es válido (ej: si se guarda mal en Firestore).
+  static NetWorthAssetType fromId(String id) {
+    try {
+      // El método .values.byName(id) busca el miembro del enum cuyo .name coincida con el 'id'.
+      return NetWorthAssetType.values.byName(id);
+    } catch (e) {
+      // Manejo de errores por si el ID guardado en Firestore es inválido
+      debugPrint(
+        'Error: ID de activo "$id" no encontrado en NetWorthAssetType. Asumiendo BankAccount.',
+      );
+      return NetWorthAssetType
+          .bankAccount; // Puedes devolver un valor por defecto o relanzar la excepción
+    }
+  }
+
+  // Devuelve el identificador de la cadena para la persistencia.
+  String get id {
+    return name;
+  }
+
+  // Nombre para mostrar en la UI
+  String get title {
+    switch (this) {
+      case NetWorthAssetType.bankAccount:
+        return 'Cuenta Bancaria';
+      case NetWorthAssetType.investment:
+        return 'Inversiones';
+      case NetWorthAssetType.longTermAsset:
+        return 'Activo a Largo Plazo';
+    }
+  }
+
+  // Icono de Material Icons
+  IconData get iconData {
+    switch (this) {
+      case NetWorthAssetType.bankAccount:
+        return Icons.account_balance;
+      case NetWorthAssetType.investment:
+        return Icons.bar_chart;
+      case NetWorthAssetType.longTermAsset:
+        return Icons.trending_up;
+    }
+  }
+
+  // Color de Fondo del Círculo (backgrounCircleColor)
+  Color get backgroundColor {
+    switch (this) {
+      case NetWorthAssetType.bankAccount:
+        return Colors.lightGreen;
+      case NetWorthAssetType.investment:
+        return Colors.lightBlue;
+      case NetWorthAssetType.longTermAsset:
+        return Colors.orange;
+    }
+  }
+
+  // Color del Icono (Opcional, pero útil para contraste)
+  Color get iconColor {
+    return Colors.white;
+  }
+}
+
 ///#####################################################################
 ///#####################################################################
 ///MONEDAS
@@ -325,8 +412,11 @@ class Currency {
     );
   }
 
+  // Método para mostrar el formato
+  String get displayFormat => '$code ($symbol)';
+
   // =========================================================
-  // ⭐️ ESTRUCTURA DE DATOS EMBEBIDA ⭐️
+  // ESTRUCTURA DE DATOS EMBEBIDA
   // =========================================================
 
   // 1. JSON como String constante
@@ -370,7 +460,6 @@ class Currency {
 ]
 '''; // Puedes ampliar esta lista con todas las que necesites
 
-  // 2. ⭐️ Getter para obtener la lista de objetos Currency ⭐️
   static List<Currency> get availableCurrencies {
     // Decodifica el string JSON.
     final List<dynamic> jsonList = jsonDecode(_currenciesJsonString);
@@ -380,4 +469,14 @@ class Currency {
         .map((jsonMap) => Currency.fromJson(jsonMap as Map<String, dynamic>))
         .toList();
   }
+}
+
+enum UpdateDirection { add, delete, none }
+
+// Clase para empaquetar el nuevo monto y la dirección
+class AmountUpdate {
+  final String newAmount;
+  final UpdateDirection direction;
+
+  AmountUpdate(this.newAmount, this.direction);
 }

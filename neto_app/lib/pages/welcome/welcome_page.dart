@@ -30,7 +30,10 @@ class WelcomeScreen extends StatelessWidget {
                   Text(
                     "NETO",
                     textAlign: TextAlign.start,
-                    style: textTheme.titleLarge!.copyWith(letterSpacing: 6, fontSize: 25),
+                    style: textTheme.titleLarge!.copyWith(
+                      letterSpacing: 6,
+                      fontSize: 25,
+                    ),
                   ),
                 ],
               ),
@@ -48,13 +51,13 @@ class WelcomeScreen extends StatelessWidget {
               SizedBox(height: AppDimensions.spacingExtraLarge),
 
               Text(
-                'Una aplicación que te ayuda a seguir tus finanzas de sencilla e intuitiva.',
+                'Una aplicación que te ayuda a seguir tus finanzas de forma sencilla e intuitiva.',
                 style: TextStyle(
                   fontSize: 22,
                   height: 1.4,
                   fontWeight: FontWeight.w400,
-                  color:
-                      colorScheme.onSurfaceVariant, // Usamos el color gris para el texto de cuerpo
+                  color: colorScheme
+                      .onSurfaceVariant, // Usamos el color gris para el texto de cuerpo
                 ),
               ),
 
@@ -83,18 +86,23 @@ class ActionButtons extends StatelessWidget {
       children: <Widget>[
         // Botón Primario: Crea una cuenta (Violeta/Relleno)
         StandarButton(
+          radius: 100,
           height: AppDimensions.inputFieldHeight,
           width: double.infinity,
           onPressed: () {
             Navigator.push<void>(
               context,
-              MaterialPageRoute<void>(builder: (BuildContext context) => const SignUpPage()),
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const SignUpPage(),
+              ),
             );
           },
           text: appLocalizations.createAccount,
         ),
         const SizedBox(height: AppDimensions.spacingMedium),
         StandarButton(
+          side: BorderSide(color: colorScheme.outlineVariant),
+          radius: 100,
           backgroundColor: colorScheme.primaryContainer,
           textColor: colorScheme.onPrimaryContainer,
           height: AppDimensions.inputFieldHeight,
@@ -102,7 +110,9 @@ class ActionButtons extends StatelessWidget {
           onPressed: () {
             Navigator.push<void>(
               context,
-              MaterialPageRoute<void>(builder: (BuildContext context) => const LoginPage()),
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const LoginPage(),
+              ),
             );
           },
           text: appLocalizations.loginTitle,

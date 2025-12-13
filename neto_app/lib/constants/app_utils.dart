@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:neto_app/constants/app_enums.dart';
 
 /// Define las dimensiones, espaciados (padding/margin) y tamaños consistentes.
 /// Basado en una escala de 8.
@@ -90,7 +91,7 @@ class AppDimensions {
     // 2. Definir tamaños base y umbrales.
     const double baseSize =
         55.0; // Tamaño de fuente para números cortos (ej: 1.00)
-    const double minSize = 25.0; // Tamaño de fuente mínimo.
+    const double minSize = 37.0; // Tamaño de fuente mínimo.
 
     // 3. Definir los umbrales de longitud y la escala de reducción.
     // - Si la longitud es 5 (ej: 99.99), usamos el tamaño base.
@@ -151,10 +152,51 @@ class AppFormatters {
   static final numberFormatterES = NumberFormat.decimalPattern('es_ES');
 
   // Formato de miles simple con convención americana (1,234,567.89)
-  static final numberFormatterUS = NumberFormat.decimalPattern('en_US');
+  static final numberFormatterUS = NumberFormat.currency(
+    locale: 'en_US',
+    decimalDigits: 2,
+  );
 
   // Formato para porcentajes
   static final percentage = NumberFormat.percentPattern();
+
+  String formatNumberES(String text) {
+    // 1. Limpiar: Eliminar todo excepto dígitos, comas y puntos.
+    String cleanedText = text.replaceAll(RegExp(r'[^\d,.]'), '');
+
+    // 2. Normalizar: Reemplazar la coma decimal por el punto decimal
+    // para que Dart pueda parsearlo (esto es crucial).
+    cleanedText = cleanedText.replaceAll(',', '.');
+
+    // 3. Parsear a número
+    double? number = double.tryParse(cleanedText);
+
+    if (number == null) {
+      return text; // Devolver el texto original si no es válido
+    }
+
+    // 4. Formatear y devolver
+    return numberFormatterES.format(number).trim();
+  }
+
+  String formatNumberUS(String text) {
+    // 1. Limpiar: Eliminar todo excepto dígitos, comas y puntos.
+    String cleanedText = text.replaceAll(RegExp(r'[^\d,.]'), '');
+
+    // 2. Normalizar: Reemplazar la coma decimal por el punto decimal
+    // para que Dart pueda parsearlo (esto es crucial).
+    cleanedText = cleanedText.replaceAll(',', '.');
+
+    // 3. Parsear a número
+    double? number = double.tryParse(cleanedText);
+
+    if (number == null) {
+      return text; // Devolver el texto original si no es válido
+    }
+
+    // 4. Formatear y devolver
+    return numberFormatterUS.format(number).trim();
+  }
 
   // ----------------------------------------------------
   // C. FUNCIÓN DINÁMICA
@@ -258,6 +300,82 @@ class AppFormatters {
     return locales.first;
   }
 
+  static String getFormatedNumber(
+    String text, // Contiene la entrada del usuario (ej: "123,")
+    double amount, // Contiene el valor numérico parseado (ej: 123.0)
+  ) {
+    // DECLARACIÓN LOCAL: Creamos el formateador aquí dentro del scope static
+    final NumberFormat decimalFormatter = NumberFormat.decimalPatternDigits(
+      locale: 'es_ES',
+      decimalDigits: 2, // Fija a 2 decimales para montos
+    );
+    final NumberFormat intergerFormatter = NumberFormat.decimalPatternDigits(
+      locale: 'es_ES',
+      decimalDigits: 0, // Fija a 2 decimales para montos
+    );
+
+    // El formateador de salida siempre es a 2 decimales para moneda
+    String intergerFormat = intergerFormatter.format(amount);
+    String decimalFormat = decimalFormatter.format(amount);
+
+    // 1. Verificación de Estado
+    // Verificamos si la entrada es parcial (termina en ',' o '.')
+    bool endsWithDecimalSeparator =
+        text.endsWith(',') ||
+        text.endsWith('.') ||
+        text.contains(',') ||
+        text.contains('.');
+
+    // A) Si el texto está vacío o el monto es cero
+    if (text.isEmpty) {
+      // Si amount es 0.0, devolvemos el valor formateado de cero.
+      return decimalFormatter.format(0.0);
+    }
+
+    // B) Si el usuario está ingresando decimales (termina en separador)
+    // Devuelve la entrada literal para que el usuario pueda escribir el siguiente dígito.
+    if (endsWithDecimalSeparator) {
+      return decimalFormat;
+    }
+
+    // C) En cualquier otro caso (número completo o parte entera), devuelve el valor formateado.
+    return intergerFormat;
+  }
+  // static String getFormatedNumber(
+  //   String textToFormat,
+  //   String text,
+  //   double amount,
+  // ) {
+  //   String decimalFormat = NumberFormat.decimalPatternDigits(
+  //     locale: 'es_ES',
+  //   ).format(amount);
+  //   String intergetFormat = NumberFormat.decimalPatternDigits(
+  //     locale: 'es_ES',
+  //     decimalDigits: 0,
+  //   ).format(amount);
+
+  //   // SI EL VALOR(TEXT) ESTA VACIO, DEVOLVEMOS EL NUMERO CON DOS DECIMALES
+  //   if (text.isEmpty) {
+  //     textToFormat = text;
+  //     textToFormat = decimalFormat;
+  //   }
+  //   //TIENE DECIMALES POR LO QUE TENEMOS QUE CONVERTIRLO
+  //   else if (text.contains('.') && text.split('.').length == 2) {
+  //     String a = text.split('.').length.toString();
+  //     debugPrint(a);
+  //     debugPrint('text$text');
+  //     debugPrint('decimalFormat$decimalFormat');
+  //     debugPrint('textFormat$textToFormat');
+  //     debugPrint('lengt${text.split('.').length}');
+  //     textToFormat = text;
+  //     textToFormat = decimalFormat;
+  //   } else {
+  //     textToFormat = decimalFormat;
+  //   }
+
+  //   return textToFormat;
+  // }
+
   //###################################################################################
   //###################################################################################
   //FECHAS
@@ -266,6 +384,19 @@ class AppFormatters {
 
   static String customDateFormatShort(DateTime date) {
     return DateFormat.yMMMd('es').format(date);
-    ;
   }
 }
+
+dynamic getCategory(String id, String type) {
+  if (type == TransactionType.expense.id) {
+    return Expenses.getCategoryById(id);
+  } else {
+    return Incomes.getCategoryById(id);
+  }
+}
+
+List<Color> chartColorsStatic = [
+  NetWorthAssetType.bankAccount.backgroundColor,
+  NetWorthAssetType.investment.backgroundColor,
+  NetWorthAssetType.longTermAsset.backgroundColor,
+];

@@ -87,7 +87,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                   dateCreated: DateTime.now(),
                 );
 
-                // 3. 🔑 Llamar al Provider para crear y actualizar la lista
+                // 3.  Llamar al Provider para crear y actualizar la lista
                 // El Provider se encarga de llamar al Controller y luego a loadInitialReports()
                 await reportsProvider.createReportAndUpdate(
                   context: context,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:neto_app/provider/reports_provider.dart';
 import 'package:neto_app/provider/transaction_provider.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
-import 'package:provider/provider.dart'; // 🔑 Importar Provider
+import 'package:provider/provider.dart'; //FloatingImportar Provider
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/controllers/reports_controller.dart';
@@ -49,7 +49,6 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
 
   @override
   void initState() {
-    // ⚠️ Asumo que category, Expenses, and Incomes son tipos válidos
     category = getCategory(widget.transactionModel.categoryid);
     super.initState();
   }
@@ -59,7 +58,7 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    // 🔑 Obtenemos una referencia al Provider (listen: false) para disparar acciones
+    // Obtenemos una referencia al Provider (listen: false) para disparar acciones
     final provider = context.read<TransactionsProvider>();
 
     return Scaffold(
@@ -78,7 +77,7 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                       overflow: TextOverflow.ellipsis,
                       widget.transactionModel.description ?? "-",
                       style: textTheme.titleMedium!.copyWith(
-                        color: colorScheme.onSurface,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -91,7 +90,7 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                       widget.transactionModel.amount.toStringAsFixed(2),
                       style: textTheme.titleLarge!.copyWith(
                         color: colorScheme.onSurface,
-                        fontSize: 40,
+                        fontSize: 50,
                       ),
                     ),
                   ),
@@ -163,13 +162,16 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                     minVerticalPadding: 0.0,
                     visualDensity: VisualDensity.comfortable,
                     title: Text(
-                      "Importe",
+                      "Tipo de movimiento",
                       style: textTheme.bodySmall!.copyWith(
                         color: colorScheme.onSurface,
                       ),
                     ),
                     subtitle: Text(
-                      widget.transactionModel.amount.toStringAsFixed(2),
+                      TransactionType.getById(
+                            widget.transactionModel.type,
+                          )?.getName(context) ??
+                          "-",
                       style: textTheme.bodyMedium!.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -193,7 +195,7 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                   showCupertinoModalPopup(
                     context: context,
                     builder: (BuildContext modalContext) {
-                      // 🔑 La lógica del ReportSelectionModal
+                      //FloatingLa lógica del ReportSelectionModal
 
                       // El ReportsProvider ya debería estar cargado
                       // Usamos modalContext para Consumer
@@ -218,7 +220,7 @@ class _TransactionReadPageState extends State<TransactionReadPage> {
                             ),
                             Divider(color: colorScheme.outline),
                             Expanded(
-                              // 🔑 Usamos Consumer para escuchar los cambios del ReportsProvider
+                              //FloatingUsamos Consumer para escuchar los cambios del ReportsProvider
                               child: Consumer<ReportsProvider>(
                                 builder: (context, provider, child) {
                                   final reports = provider.reports;

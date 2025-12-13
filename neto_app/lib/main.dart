@@ -1,17 +1,19 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:neto_app/provider/reports_provider.dart';
-import 'package:neto_app/provider/transaction_provider.dart';
-import 'package:provider/provider.dart'; // 🔑 Importar Provider
-import 'package:neto_app/firebase_options.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/pages/networth/read/networth_read_page.dart';
+import 'package:neto_app/pages/profile/profile_page_options.dart';
+import 'package:neto_app/provider/networth_provider.dart';
+import 'package:neto_app/provider/reports_provider.dart';
+import 'package:neto_app/provider/shared_preferences_provider.dart';
+import 'package:neto_app/provider/transaction_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:neto_app/firebase_options.dart';
 import 'package:neto_app/pages/home/home.dart';
 import 'package:neto_app/pages/reports/read/reports_read_page.dart';
 import 'package:neto_app/pages/transactions/read/transactions_read_page.dart';
 import 'package:neto_app/theme/theme.dart';
-// Asumiendo que transactions_provider.dart existe en providers/
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,13 +22,17 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        // 1. TransactionsProvider
         ChangeNotifierProvider(
           create: (_) => TransactionsProvider()..loadInitialTransactions(),
         ),
-        // 2. ReportsProvider
         ChangeNotifierProvider(
           create: (_) => ReportsProvider()..loadInitialReports(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NetWorthAssetProvider()..loadInitialAssets(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider()..initializeSettings(),
         ),
       ],
       child: const MyApp(),
@@ -40,19 +46,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      //NO TOCAR
+      //----------------------------------------------------
+      supportedLocales: AppLocalizations.supportedLocales,
+      //----------------------------------------------------
       localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+        AppLocalizations.delegate, // Carga tus strings (.arb)
+        GlobalMaterialLocalizations.delegate, // Textos Material
+        GlobalWidgetsLocalizations.delegate, // Direccionalidad
+        GlobalCupertinoLocalizations.delegate, // Textos Cupertino
       ],
-      locale: const Locale('es', 'ES'),
+
       title: 'NETO',
       theme: CustomLightTheme.lightThemeData(),
+      //home: const ProfilesOptionsPage(),
       home: const MyHomePage(),
     );
   }
 }
+
+// ----------------------------------------------------
+// WIDGET PRINCIPAL DE NAVEGACIÓN (MYHOMEPAGE)
+// ----------------------------------------------------
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -64,23 +79,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  // Lista de widgets/contenidos con ValueKey para AnimatedSwitcher
+  //Lista de widgets/contenidos
   final List<Widget> _widgetOptions = <Widget>[
-    // 🔑 CLAVE: Usar ValueKey para que AnimatedSwitcher pueda distinguir los Widgets
-    const HomePage(key: ValueKey(0)),
-    TransactionsReadPage(key: const ValueKey(1)),
-    const ReportsReadPage(showAppBar: true, key: ValueKey(2)),
-    Center(
-      key: const ValueKey(3),
-      child: Text(
-        'Página: 3 (Perfil)',
-        style: const TextStyle(
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    ),
+    const HomePage(),
+    const TransactionsReadPage(),
+    const ReportsReadPage(showAppBar: true),
+    const NetworthReadPage(),
+    const ProfilesOptionsPage(),
   ];
 
   // Función de cambio de pestaña
@@ -90,58 +95,56 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // Definición de los ítems de navegación (BottomNavigationBarItem)
+  List<BottomNavigationBarItem> _navBarItems(BuildContext context) {
+    //AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+    return [
+      BottomNavigationBarItem(icon: const Icon(Icons.home), label: 'Inicio'),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.compare_arrows_sharp),
+        label: 'Movimientos',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.folder),
+        label: 'Informes',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.account_balance_wallet),
+        label: 'Activos',
+      ),
+      const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.primaryContainer,
+      backgroundColor: colorScheme
+          .background, // Usar colorScheme.background o colorScheme.surface
+      // MODIFICACIÓN: Usamos IndexedStack para mantener el estado de las páginas
+      body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
 
-      // 🔑 CLAVE: Reemplazar IndexedStack por AnimatedSwitcher para la transición
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 350), // Duración de la animación
-        switchOutCurve: Curves.easeIn,
-        switchInCurve: Curves.easeOut,
+      // REEMPLAZO: BottomNavigationBar estándar de Flutter
+      bottomNavigationBar: BottomNavigationBar(
+        // Propiedades de diseño del BottomNavigationBar
+        backgroundColor: colorScheme.surface,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        selectedItemColor:
+            colorScheme.primary, // Color del ícono y texto seleccionado
+        unselectedItemColor: colorScheme.onSurface.withOpacity(
+          0.6,
+        ), // Color de los íconos inactivos
+        type: BottomNavigationBarType
+            .fixed, // Mantiene los ítems fijos y visibles
+        // Lógica de navegación
+        currentIndex: _selectedIndex,
+        onTap: _onTabChange,
 
-        // // Constructor de transición (Fade + Scale)
-        // transitionBuilder: (child, animation) {
-        //   // Animación de escala (entra ligeramente más pequeño)
-        //   final scaleAnimation = Tween<double>(
-        //     begin: 0.95,
-        //     end: 1.0,
-        //   ).animate(animation);
-
-        //   // Combinación de Fade y Scale para una transición suave y elegante
-        //   return FadeTransition(
-        //     opacity: animation,
-        //     child: ScaleTransition(scale: scaleAnimation, child: child),
-        //   );
-        // },
-        child: _widgetOptions[_selectedIndex], // El widget que se muestra
-      ),
-
-      bottomNavigationBar: Container(
-        color: colorScheme.primaryContainer,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
-          child: GNav(
-            color: colorScheme.onSurface,
-            backgroundColor: colorScheme.primaryContainer,
-            activeColor: colorScheme.primary,
-            tabBackgroundColor: colorScheme.primary.withAlpha(70),
-            gap: 8,
-            padding: const EdgeInsets.all(16),
-            selectedIndex: _selectedIndex,
-            onTabChange: _onTabChange,
-
-            tabs: const [
-              GButton(icon: Icons.home, text: 'Home'),
-              GButton(icon: Icons.compare_arrows_sharp, text: 'Movimientos'),
-              GButton(icon: Icons.folder, text: 'Informes'),
-              GButton(icon: Icons.person, text: 'Perfil'),
-            ],
-          ),
-        ),
+        // Ítems de navegación
+        items: _navBarItems(context),
       ),
     );
   }

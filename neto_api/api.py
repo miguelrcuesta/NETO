@@ -1,4 +1,7 @@
 from flask import Flask, jsonify,request
+
+import category_prompt as promt
+
 app = Flask(__name__)
 
 
@@ -20,72 +23,15 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 # 2. Obtener la Clave API de la variable de entorno
-API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = 'gemini-2.5-flash' 
+API_KEY = "AIzaSyBha_Lty0xq1Fxkc72POAwKTzNghJ7_0Ck"
+#API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_FLASH = 'gemini-2.5-flash' 
 
-# --- FUNCIÓN DE GENERACIÓN DE PROMPT ---
+#================================================================
+#FUNCIONES
+#================================================================
 
-def get_category_gemini_prompt(description: str,locale: str) -> str:
-    
-    
-    prompt_base = """Eres un motor de categorización de movimientos financieros de alta precisión.
-    Tu ÚNICA tarea es asignar la categoría principal y subcategoría más apropiada a la descripción de una transacción, siguiendo las reglas y el formato estricto.
-    También eres bilingue, asi que si te paso el idioma tienes que categorizarlo en ese idioma
-    IDIOMA: '{locale}'.
-
-    CATEGORÍAS Y SUBCATEGORÍAS VÁLIDAS:
-    Debes elegir las claves 'categoria' y 'subcategoria' de la siguiente lista:
-
-    **A. CATEGORÍAS DE GASTOS**
-
-      | ID | Nombre de Categoría | Subcategorías |
-      |:---:|:---|:---|
-      | VIVIENDA | Vivienda y Hogar | Alquiler, Hipoteca, Servicios (Luz, Agua, Gas), Internet y Telefonía, Reparaciones y Mantenimiento, Muebles y Decoración |
-      | ALIMENTACION | Alimentación | Supermercado (Compras), Restaurantes (comer fuera), Comida Rápida, Cafeterías y Bares |
-      | TRANSPORTE | Transporte | Combustible/Gasolina, Transporte Público, Taxi/VTC, Mantenimiento de Vehículo, Peajes y Parking |
-      | SUSCRIPCIONES | Suscripciones y Cuotas | Netflix, Amazon Prime, Amazon Music, Apple TV, Apple iCloud, Apple Music, Disney+, Youtube Premium, HBO, Movistar, Plataforma Streaming, Gimnasio/Deportes, Software/Apps, Cursos de Formación, Cuotas bancarias |
-      | SALUD | Salud y Cuidado | Médico y Dentista, Farmacia y Medicamentos, Seguro de Salud, Cuidado Personal (Peluquería, cosmética) |
-      | OCIO | Ocio y Diversión | Cine/Teatro/Conciertos, Viajes y Vacaciones, Hobbies, Compras de Electrónica, Salidas nocturnas |
-      | ROPA | Ropa y Accesorios | Ropa, Calzado, Accesorios, Lavandería/Tintorería |
-      | OTROS | Otros | Pago de Préstamos/Tarjetas, Regalos, Mascotas (Comida, Veterinario), Donaciones, Multas, Retiro de efectivo |
-
-   **B. CATEGORÍAS DE INGRESOS**
-
-      | ID | Nombre de Categoría | Subcategorías |
-      |:---:|:---|:---|
-      | SALARIO | Salario | Nómina Principal, Horas Extra, Bonificaciones, Ingresos Freelance |
-      | INVERSIONES | Inversiones | Dividendos, Intereses Bancarios, Alquiler de Propiedades, Venta de Activos, Acciones |
-      | VENTAS | Ventas/Negocio | Venta de Artículos Personales, Ingresos de Negocio Propio, Comisiones, Devoluciones |
-      | OTROS | Otros Ingresos | Regalos Recibidos, Devolución de Impuestos, Reembolsos, Bizum, Ingresos Varios/Extraordinarios |
-
-      ---
-    
-    REGLAS DE ASOCIACIÓN DE MARCAS (ALTA PRIORIDAD):
-    - REPSOL, CEPSA O MOEVE, SHELL, BP, WAYLET -> categoria: TRANSPORTE, subcategoria: Combustible/Gasolina
-    - UBER, CABIFY -> categoria: TRANSPORTE, subcategoria: Taxi/VTC
-    - MERCADONA, CARREFOUR, LIDL, DIA, ALDI -> categoria: ALIMENTACION, subcategoria: Supermercado (Compras)
-    - GLOVO, JUST EAT, MCDONALDS, BURGER KING, SAONA,  -> categoria: ALIMENTACION, subcategoria: Restaurantes (comer fuera)
-    - NETFLIX, SPOTIFY, DISNEY+, HBO, MOVISTAR+ -> categoria: SUSCRIPCIONES, subcategoria: Plataforma Streaming
-    - IBERDROLA, ENDESA, NATURGY, AGUA, LUZ, GAS -> categoria: VIVIENDA, subcategoria: Servicios (Luz, Agua, Gas)
-    - CAJERO, ATM, DISPOSICION, RETIRO -> categoria: OTROS_GASTOS, subcategoria: Retiro de efectivo
-
-    ---
-    ENTRADA (DESCRIPCIÓN DEL MOVIMIENTO): '{description}'.
-    INSTRUCCIÓN DE SALIDA ESTRICTA FINAL:
-    Debes responder ÚNICAMENTE con una estructura de datos JSON válida y completa.
-    NO INCLUYAS NINGÚN TEXTO INTRODUCTORIO, EXPLICACIÓN, SALUDO, CÓDIGO NI NADA ADICIONAL.
-
-    OUTPUT FORMATO ESTRICTO:
-    La respuesta DEBE ser ÚNICAMENTE el objeto JSON que contiene la categoría y la subcategoría.
-
-    FORMATO EXACTO REQUERIDO:
-    {{ "categoria": "Nombre de Categoría>", "subcategoria": "<subcategoría asignada>" }}
-    ---
-    """
-    return prompt_base.format(description=description,locale=locale)
-
-
-
+# --- FUNCIÓN DE GENERACIÓN DE UNA CATEGORIA CON IA ---
 def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
     """
     Llama a la API de Gemini para clasificar una transacción y devuelve el resultado.
@@ -101,6 +47,7 @@ def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
         
         # Devolvemos un resultado de negocio 200 con un estado OFFLINE
         return {
+            "idcategoria": FALLBACK_CATEGORY, 
             "categoria": FALLBACK_CATEGORY, 
             "subcategoria": FALLBACK_SUBCATEGORY,
             "ia_status": "OFFLINE" # Indica al cliente que la IA no estaba disponible
@@ -111,21 +58,22 @@ def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
         client = genai.Client(api_key=API_KEY)
         
         # 2. Generar el prompt con la descripción
-        prompt = get_category_gemini_prompt(description,locale)
+        prompt =promt.get_category_gemini_prompt(description,locale)
 
         # 3. Llamar a la API con configuración JSON estricta
         response = client.models.generate_content(
-            model=MODEL_NAME,
+            model=GEMINI_FLASH,
             contents=prompt,
             config={
                 "response_mime_type": "application/json",
                 "response_schema": {
                     "type": "object",
                     "properties": {
+                        "idcategoria": {"type": "string"},
                         "categoria": {"type": "string"},
                         "subcategoria": {"type": "string"}
                     },
-                    "required": ["categoria", "subcategoria"]
+                    "required": ["idcategoria","categoria", "subcategoria"]
                 }
             }
         )
@@ -138,6 +86,7 @@ def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
     except APIError as e:
         app.logger.error(f"Error de API (Gemini) al clasificar: {e}")
         return {
+            "idcategoria": FALLBACK_CATEGORY, 
             "categoria": FALLBACK_CATEGORY, 
             "subcategoria": FALLBACK_SUBCATEGORY,
             "ia_status": "FAILED" # Falló la llamada a Google
@@ -145,11 +94,80 @@ def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
     except Exception as e:
         app.logger.error(f"Error inesperado al procesar la respuesta: {e.args}")
         return {
+            "idcategoria": FALLBACK_CATEGORY, 
             "categoria": FALLBACK_CATEGORY, 
             "subcategoria": FALLBACK_SUBCATEGORY,
             "ia_status": "FAILED_UNKNOWN" # Falló el código Python
         }
+    
+def networth_resume_gemini(asset_data_json: str, user_question: str ,locale: str) -> Dict[str, str]:
+    """
+    Llama a la API de Gemini para clasificar una transacción y devuelve el resultado.
+    Si la API_KEY no está configurada, devuelve un resultado de ERROR/FALLBACK.
+    """
+    # Define la categoría de fallback para estos casos
+    FALLBACK_RESUME = "ERROR"
+    
 
+    if not API_KEY:
+        # CORRECCIÓN: Eliminamos 'e' y solo registramos el error de configuración.
+        app.logger.error("FATAL: La clave GEMINI_API_KEY no está configurada. Devolviendo FALLBACK.")
+        
+        # Devolvemos un resultado de negocio 200 con un estado OFFLINE
+        return {
+            "resume": FALLBACK_RESUME, 
+            "ia_status": "OFFLINE" 
+        }
+
+    try:
+        # 1. Inicializar el cliente
+        client = genai.Client(api_key=API_KEY)
+        
+        # 2. Generar el prompt con la descripción
+        prompt = promt.get_networth_resume_gemini_prompt(asset_data_json,user_question,locale)
+
+        # 3. Llamar a la API con configuración JSON estricta
+        response = client.models.generate_content(
+            model=GEMINI_FLASH,
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": {
+                    "type": "object",
+                    "properties": {
+                        "resume": {"type": "string"},
+                        
+                        
+                    },
+                }
+            }
+        )
+
+        # 4. Devolver el JSON (como diccionario de Python)
+        result = json.loads(response.text)
+        result["ia_status"] = "SUCCESS"
+        return result
+
+    except APIError as e:
+        app.logger.error(f"Error de API (Gemini) al clasificar: {e}")
+        return {
+            "resume": FALLBACK_RESUME, 
+            "ia_status": "FAILED" # Falló la llamada a Google
+        }
+    except Exception as e:
+        app.logger.error(f"Error inesperado al procesar la respuesta: {e.args}")
+        return {
+            "resume": FALLBACK_RESUME, 
+            "ia_status": "FAILED_UNKNOWN" # Falló el código Python
+        }
+
+
+
+
+
+#================================================================
+#LLAMADAS API
+#================================================================
 # --- ENDPOINT DE LA API (FLASK) ---
 
 @app.route('/classify', methods=['POST'])
@@ -176,8 +194,34 @@ def classify_transaction_api():
 
     return jsonify(result), 200
 
-# --- INICIO DEL SERVIDOR ---
+@app.route('/networthResume', methods=['POST'])
+def networth_resume_api():
+    print("API RESUME")
+    """
+    Endpoint que recibe un promt de usuario y devuelve un texto con el resumen de su patrimonio.
+    Espera un JSON: {"asset_data_json":<str>,"user_question":<str>  "Analiza la evolución de mi patrimonio en el ultimos años"}
+    """
+    # 1. Validar la solicitud
+    data = request.get_json()
+    if not data or 'asset_data_json' not in data:
+        return jsonify({"error": "Falta la clave 'asset_data_json' en el cuerpo del JSON."}), 400
 
+    # 2. Obtener el valor del json
+    asset_data_json = data.get('asset_data_json', '')
+    user_question = data.get('user_question', '')
+    locale = data.get('locale', '')
+
+    result = networth_resume_gemini(asset_data_json=asset_data_json,user_question=user_question,locale=locale)
+
+    # 3. Devolver la respuesta al cliente
+    
+    if result.get("resume") == "ERROR":
+         return jsonify(result), 500 
+
+    return jsonify(result), 200
+
+
+# --- INICIO DEL SERVIDOR ---
 if __name__ == '__main__':
     # Verifica la clave API antes de iniciar
     if not API_KEY:
@@ -186,9 +230,8 @@ if __name__ == '__main__':
         print("Para configurar: export GEMINI_API_KEY='TU_CLAVE'")
         print("************************************************************************")
 
-    print(f"Servidor Flask iniciado. Usa 'http://127.0.0.1:5000/classify' (POST)")
+    print(f"Servidor Flask iniciado. Usa 'http://127.0.0.1:5000' (POST)")
     app.run(debug=True, port=5000)
-
 
 if __name__ == '__main__':  
    app.run(debug=True,port=5000)

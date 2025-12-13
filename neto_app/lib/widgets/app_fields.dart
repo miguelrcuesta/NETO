@@ -182,34 +182,34 @@ class StandarTextField extends StatelessWidget {
           context: context,
           colorBorder: Colors.transparent,
           borderWidth: 1,
-          radius: 5,
+          radius: 10,
         ),
         enabledBorder: outlineInputBorder(
           context: context,
 
           colorBorder: Colors.transparent,
           borderWidth: 1,
-          radius: 5,
+          radius: 10,
         ),
         focusedBorder: outlineInputBorder(
           context: context,
           colorBorder: colorFocusBorder ?? colorScheme.primary,
           borderWidth: 1.5,
-          radius: 5,
+          radius: 10,
         ),
         errorBorder: outlineInputBorder(
           context: context,
 
           colorBorder: Colors.transparent,
           borderWidth: 1,
-          radius: 5,
+          radius: 10,
         ),
         disabledBorder: outlineInputBorder(
           context: context,
 
           colorBorder: Colors.transparent,
           borderWidth: 1,
-          radius: 5,
+          radius: 10,
         ),
       ),
     );
@@ -306,7 +306,7 @@ class SmallTextField extends StatelessWidget {
         hintText: hintText,
         hintStyle: textTheme.bodyMedium!.copyWith(
           color: colorScheme.onSurfaceVariant,
-          fontStyle: FontStyle.italic,
+          fontStyle: FontStyle.normal,
         ),
 
         // Use bottom-only underline borders so only the bottom edge is visible

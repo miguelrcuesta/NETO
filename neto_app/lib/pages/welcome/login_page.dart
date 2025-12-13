@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_validators.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 
@@ -19,7 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   //CONTROLLERS
   //#####################################################################################
   TextEditingController emailtextController = TextEditingController();
-  TextEditingController emailRestPasswordtextController = TextEditingController();
+  TextEditingController emailRestPasswordtextController =
+      TextEditingController();
   TextEditingController passwordtextController = TextEditingController();
 
   //#####################################################################################
@@ -37,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
+      appBar: TitleAppbarBack(title: ''),
       body: Padding(
         padding: AppDimensions.paddingAllMedium,
         child: Column(
@@ -56,9 +59,15 @@ class _LoginPageState extends State<LoginPage> {
             _widgetemailfield(colorScheme),
             SizedBox(height: AppDimensions.spacingMedium),
             _widgetpasswordfield(context, colorScheme, appLocalizations),
-            _widgetforgotPassword(colorScheme, context, textTheme, appLocalizations),
+            _widgetforgotPassword(
+              colorScheme,
+              context,
+              textTheme,
+              appLocalizations,
+            ),
             SizedBox(height: AppDimensions.spacingExtraLarge),
             StandarButton(
+              radius: 100,
               height: AppDimensions.inputFieldHeight,
               width: double.infinity,
               onPressed: () {
@@ -117,7 +126,9 @@ class _LoginPageState extends State<LoginPage> {
           });
         },
         icon: Icon(
-          showPassword == true ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye,
+          showPassword == true
+              ? CupertinoIcons.eye_slash_fill
+              : CupertinoIcons.eye,
           color: Theme.of(context).colorScheme.outline,
           size: 18,
         ),
@@ -183,7 +194,9 @@ class _LoginPageState extends State<LoginPage> {
                             enable: true,
 
                             onTapOutside: (event) {
-                              FocusScope.of(context).unfocus(); // cierra el teclado
+                              FocusScope.of(
+                                context,
+                              ).unfocus(); // cierra el teclado
                             },
                             maxLines: 1,
                             labelText: "Email",
@@ -193,7 +206,9 @@ class _LoginPageState extends State<LoginPage> {
                             controller: emailRestPasswordtextController,
                             validator: emailValidator,
                             inputFormatters: [
-                              FilteringTextInputFormatter.deny(RegExp(r'\s')), // Bloquea espacios
+                              FilteringTextInputFormatter.deny(
+                                RegExp(r'\s'),
+                              ), // Bloquea espacios
                             ],
                             textInputType: TextInputType.emailAddress,
                           ),
@@ -218,7 +233,9 @@ class _LoginPageState extends State<LoginPage> {
       },
       child: Text(
         appLocalizations.forgotPassword,
-        style: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
+        style: textTheme.bodyMedium!.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
         textAlign: TextAlign.right,
       ),
     );

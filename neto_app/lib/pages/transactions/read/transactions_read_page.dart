@@ -12,10 +12,6 @@ import 'package:neto_app/pages/transactions/create/transaction_create_amount_pag
 import 'package:neto_app/pages/transactions/read/transaction_read_page.dart';
 import 'package:neto_app/widgets/widgets.dart'; // Asumiendo que TransactionCardSmall está aquí
 
-// ⚠️ PLACEHOLDERS (Asegúrate de que existan en tus archivos)
-class PaginatedReportResult {}
-// FIN PLACEHOLDERS
-
 class TransactionsReadPage extends StatefulWidget {
   final TransactionModel? transactionModel;
   const TransactionsReadPage({super.key, this.transactionModel});
@@ -29,7 +25,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
   //########################################################################
   // VARIABLES
   //########################################################################
-  // 🔑 Eliminadas: isMultiselectAviable, selectedItems (Ahora gestionadas por TransactionsProvider)
+  //Eliminadas: isMultiselectAviable, selectedItems (Ahora gestionadas por TransactionsProvider)
   final List selectedReports = []; // Se mantiene si es estado local
 
   //########################################################################
@@ -44,7 +40,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
   // FUNCIONES
   //########################################################################
 
-  // 🔑 Limpia la selección en el Provider
+  //Limpia la selección en el Provider
   void _updateNotSelectableUI() {
     context.read<TransactionsProvider>().clearSelection();
   }
@@ -59,7 +55,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // 🔑 Iniciar la carga de transacciones al inicio usando el Provider
+    // Iniciar la carga de transacciones al inicio usando el Provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TransactionsProvider>().loadInitialTransactions();
     });
@@ -98,8 +94,9 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
               barrierDismissible: false,
               context: context,
               builder: (context) {
+                //BOTON DE CREAR
                 return CupertinoPageScaffold(
-                  // ... (NavigationBar y TransactionAmountCreatePage) ...
+                  backgroundColor: colorScheme.surface,
                   navigationBar: CupertinoNavigationBar(
                     leading: TextButton(
                       onPressed: () {
@@ -116,6 +113,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                   child: TransactionAmountCreatePage(
                     transactionModel: widget.transactionModel,
                     isEditable: false,
+                    isForReport: false,
                   ),
                 );
               },
@@ -129,13 +127,13 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
     );
   }
 
-  // 🔑 APPBAR REACTIVO USANDO context.watch
+  //APPBAR REACTIVO USANDO context.watch
   AppBar _selectedAviableAppbar(BuildContext context) {
     AppLocalizations appLocalizations = AppLocalizations.of(context)!;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    // 🔑 context.watch fuerza la reconstrucción del AppBar cuando cambia el estado del Provider
+    //context.watch fuerza la reconstrucción del AppBar cuando cambia el estado del Provider
     final provider = context.watch<TransactionsProvider>();
 
     final isMultiselectActive = provider.isMultiselectActive;
@@ -151,13 +149,13 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
         ),
         title: Text(
           '${provider.transactionsSelected.length} seleccionados',
-          style: textTheme.titleMedium,
+          style: textTheme.bodyMedium,
         ),
         actions: [
           if (isItemSelected)
             IconButton(
               onPressed: () async {
-                // 🔑 Llama al Provider para borrar
+                //Llama al Provider para borrar
                 await provider.deleteSelectedTransactionsAndUpdate(
                   context: context,
                   controller: transactionController,
@@ -192,7 +190,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
     }
   }
 
-  // 🔑 FUNCIÓN DE VISUALIZACIÓN DE TRANSACCIONES USANDO CONSUMER
+  //FUNCIÓN DE VISUALIZACIÓN DE TRANSACCIONES USANDO CONSUMER
   Widget _buildTransactionsView(BuildContext context, String type) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
@@ -239,7 +237,9 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
 
         // 3. Scroll Infinito y RefreshIndicator
         return RefreshIndicator(
-          onRefresh: provider.loadInitialTransactions,
+          onRefresh: () async {
+            await provider.loadInitialTransactions();
+          },
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels >=
@@ -266,7 +266,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
 
                 final transaction = transactions[index];
 
-                // 🔑 Usamos el Set del Provider para saber si está seleccionado
+                //Usamos el Set del Provider para saber si está seleccionado
                 bool isSelected = provider.transactionsSelected.contains(
                   transaction.transactionId,
                 );
@@ -274,15 +274,15 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10.0,
-                    vertical: 6.0,
+                    vertical: 2.0,
                   ),
                   child: InkWell(
                     onLongPress: () {
-                      // 🔑 Inicia el modo multiselección y selecciona el elemento
+                      //Inicia el modo multiselección y selecciona el elemento
                       provider.toggleTransactionSelection(transaction);
                     },
                     onTap: () {
-                      // 🔑 Si está activo, selecciona/deselecciona. Si no, navega.
+                      // Si está activo, selecciona/deselecciona. Si no, navega.
                       if (isMultiselectActive) {
                         provider.toggleTransactionSelection(transaction);
                       } else {
@@ -290,7 +290,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                       }
                     },
                     child: TransactionCardSmall(
-                      isSelected: isSelected, // 🔑 Usa el estado del Provider
+                      isSelected: isSelected,
                       idCategory: transaction.categoryid,
                       type: transaction.type,
                       title: transaction.description ?? 'Sin categoría',
@@ -314,6 +314,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
     TextTheme textTheme,
     TransactionModel transaction,
   ) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
     showCupertinoModalPopup(
       barrierDismissible: false,
       context: context,
@@ -326,11 +327,11 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                 _updateNotSelectableUI(); // Limpia la selección por si acaso
               },
               child: Text(
-                "Atras",
+                "Atrás",
                 style: textTheme.bodySmall!.copyWith(color: Colors.blue),
               ),
             ),
-            //BOTON EDITAR
+
             trailing: TextButton(
               onPressed: () async {
                 // ... (Lógica de navegación a edición) ...
@@ -340,6 +341,8 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                   builder: (context) {
                     return CupertinoPageScaffold(
                       navigationBar: CupertinoNavigationBar(
+                        backgroundColor: colorScheme.surface,
+                        automaticBackgroundVisibility: false,
                         leading: TextButton(
                           onPressed: () {
                             Navigator.pop(context);
@@ -355,6 +358,7 @@ class _TransactionsReadPageState extends State<TransactionsReadPage>
                       child: TransactionAmountCreatePage(
                         transactionModel: transaction,
                         isEditable: true,
+                        isForReport: false,
                       ),
                     );
                   },

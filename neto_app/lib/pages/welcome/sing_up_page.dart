@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_validators.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 
@@ -55,6 +56,7 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
+      appBar: TitleAppbarBack(title: ''),
       body: Padding(
         padding: AppDimensions.paddingAllMedium,
         child: Form(
@@ -132,10 +134,15 @@ class _SignUpPageState extends State<SignUpPage> {
               //   titleTextStyle: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
               // ),
               SizedBox(height: AppDimensions.spacingExtraSmall),
-              _widgetrepeatpasswordfield(context, colorScheme, appLocalizations),
+              _widgetrepeatpasswordfield(
+                context,
+                colorScheme,
+                appLocalizations,
+              ),
 
               SizedBox(height: AppDimensions.spacingExtraLarge),
               StandarButton(
+                radius: 100,
                 height: AppDimensions.inputFieldHeight,
                 width: double.infinity,
                 onPressed: () {
@@ -206,7 +213,9 @@ class _SignUpPageState extends State<SignUpPage> {
           });
         },
         icon: Icon(
-          showPassword == true ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye,
+          showPassword == true
+              ? CupertinoIcons.eye_slash_fill
+              : CupertinoIcons.eye,
           color: Theme.of(context).colorScheme.outline,
           size: 18,
         ),
@@ -240,7 +249,9 @@ class _SignUpPageState extends State<SignUpPage> {
           });
         },
         icon: Icon(
-          showPasswordRepeated == true ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye,
+          showPasswordRepeated == true
+              ? CupertinoIcons.eye_slash_fill
+              : CupertinoIcons.eye,
           color: Theme.of(context).colorScheme.outline,
           size: 18,
         ),
