@@ -1,10 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_enums.dart';
+import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/provider/shared_preferences_provider.dart';
+import 'package:neto_app/provider/user_provider.dart';
 import 'package:neto_app/widgets/app_bars.dart';
+import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilesOptionsPage extends StatefulWidget {
   // Asume que esta es tu propiedad estática del Manager de Monedas
@@ -66,13 +70,20 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
+    UserProvider userProvider = Provider.of<UserProvider>(
+      context,
+      listen: false,
+    );
 
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final currentCurrencyCode = settingsProvider.currentCurrency;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: TitleAppbar(title: 'Perfil'),
+      appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        title: Text('Perfil', style: textTheme.bodyMedium),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(15.0),
@@ -80,43 +91,46 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
             spacing: 20,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                decoration: decorationContainer(
-                  context: context,
-                  colorFilled: colorScheme.primaryContainer,
-                  radius: 10,
+              _userdata(context, colorScheme, textTheme, userProvider),
+              _currencyPopUp(
+                currentCurrencyCode,
+                settingsProvider,
+                userProvider,
+              ),
+              _themeSwitch(settingsProvider, userProvider),
+              Spacer(),
+
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 20.0,
+                  left: 10.0,
+                  right: 10.0,
                 ),
-                child: Column(
-                  spacing: 8,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Miguel',
-                      style: textTheme.bodyMedium!.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    Divider(thickness: 0.8, color: colorScheme.surface),
-                    Text(
-                      'Rodríguez Cuesta',
-                      style: textTheme.bodyMedium!.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    Divider(thickness: 0.8, color: colorScheme.surface),
-                    Text(
-                      'rodriguezcuestamiguel@gmail.com',
-                      style: textTheme.bodyMedium!.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
+                child: StandarButton(
+                  radius: 100,
+                  backgroundColor: colorScheme.primary,
+                  textColor: colorScheme.onPrimary,
+                  height: AppDimensions.inputFieldHeight,
+                  width: double.infinity,
+                  onPressed: () {
+                    Provider.of<UserProvider>(context, listen: false).logout();
+                  },
+                  text: 'Cerrar sesión',
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20.0),
+                child: TextButton(
+                  onPressed: () {},
 
-              _currencyPopUp(currentCurrencyCode, settingsProvider),
+                  child: Text(
+                    'Eliminar cuenta',
+                    style: textTheme.bodyMedium!.copyWith(
+                      color: colorScheme.error,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -124,9 +138,38 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
     );
   }
 
+  Widget _userdata(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    UserProvider userProvider,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      decoration: decorationContainer(
+        context: context,
+        colorFilled: colorScheme.primaryContainer,
+        radius: 10,
+      ),
+      child: Column(
+        spacing: 8,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            userProvider.user!.email ?? 'Sin información',
+            style: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurface),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _currencyPopUp(
     String currentCurrencyCode,
     SettingsProvider settingsProvider,
+    UserProvider userProvider,
   ) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
@@ -134,11 +177,11 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
       (c) => c.code == currentCurrencyCode,
       // Si no se encuentra, usar un objeto Currency por defecto
       orElse: () => Currency(
-        code: 'N/A',
-        symbol: '?',
-        nameEs: '',
-        nameEn: '',
-        locale: '',
+        code: 'EUR',
+        symbol: '€',
+        nameEs: 'Euro',
+        nameEn: 'Euro',
+        locale: 'es_ES',
       ),
     );
     return Container(
@@ -147,7 +190,6 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
       decoration: decorationContainer(
         context: context,
         colorFilled: colorScheme.primaryContainer,
-
         radius: 10,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -162,7 +204,13 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
             ),
           ),
           PopupMenuButton<String>(
-            color: colorScheme.primaryContainer,
+            menuPadding: EdgeInsets.only(right: 30),
+            popUpAnimationStyle: AnimationStyle(),
+            shape: RoundedRectangleBorder(
+              // Define el radio de las esquinas
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            color: colorScheme.surface,
             // 1. EL BOTÓN (Lo que se ve antes de hacer click)
             child: Text(
               currentCurrency.code,
@@ -188,6 +236,51 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
             onSelected: (String selectedCode) {
               // Llama al método del SettingsProvider para guardar la nueva moneda
               settingsProvider.setCurrency(selectedCode);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _themeSwitch(
+    SettingsProvider settingsProvider,
+    UserProvider userProvider,
+  ) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+    bool darktheme = settingsProvider.currentThemeMode == 'dark';
+
+    return Container(
+      height: 50,
+      width: double.infinity,
+      decoration: decorationContainer(
+        context: context,
+        colorFilled: colorScheme.primaryContainer,
+        radius: 10,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Modo oscuro',
+            style: textTheme.bodyMedium!.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          CupertinoSwitch(
+            value: settingsProvider.currentThemeMode == 'dark' ? true : false,
+            onChanged: (value) {
+              setState(() {
+                darktheme = value;
+                if (darktheme == false) {
+                  settingsProvider.setThemeMode('light');
+                } else {
+                  settingsProvider.setThemeMode('dark');
+                }
+              });
             },
           ),
         ],

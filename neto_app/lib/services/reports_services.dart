@@ -65,7 +65,7 @@ class ReportsService {
   }
 
   /// Obtiene y ordena todas las transacciones incrustadas en un informe específico.
-  Future<List<ReportTransactionModel>> getAllReportTransactions({
+  Future<List<TransactionModel>> getAllReportTransactions({
     required String reportId,
   }) async {
     // 1. OBTENER EL REPORTE
@@ -77,7 +77,7 @@ class ReportsService {
 
     // 2. EXTRAER TRANSACCIONES DEL MAPA
     // Obtenemos los valores (los objetos ReportTransactionModel) del mapa.
-    final List<ReportTransactionModel> allReportTransactions = report
+    final List<TransactionModel> allReportTransactions = report
         .reportTransactions
         .values
         .toList();
@@ -87,7 +87,7 @@ class ReportsService {
     }
 
     // 3. ORDENAR POR FECHA (Descendente: más reciente primero)
-    allReportTransactions.sort((a, b) => b.date.compareTo(a.date));
+    allReportTransactions.sort((a, b) => b.date!.compareTo(a.date!));
 
     // 4. DEVOLVER LA LISTA SIMPLE Y ORDENADA
     // Las transacciones ya son objetos completos, no necesitamos buscar IDs en otro lugar.

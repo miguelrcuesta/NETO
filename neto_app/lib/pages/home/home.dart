@@ -10,21 +10,27 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // 2. Variable de estado para guardar el índice seleccionado
-  
-
-  
 
   @override
   Widget build(BuildContext context) {
-    
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text('NETO - Home'),
+        backgroundColor: colorScheme.surface,
       ),
       body: Center(
-        child: Text('Home Page',
-            style: const TextStyle(
-                fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+        child: Text(
+          'Home Page',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

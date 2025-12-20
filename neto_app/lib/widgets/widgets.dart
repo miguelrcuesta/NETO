@@ -700,11 +700,12 @@ class _TransactionCardSmallState extends State<TransactionCardSmall> {
       decoration: decorationContainer(
         context: context,
         radius: 10,
+        borderWidth: 1,
         colorBorder: widget.isSelected
             ? colorScheme.primary
             : Colors.transparent,
         colorFilled: widget.isSelected
-            ? colorScheme.primary.withAlpha(10)
+            ? colorScheme.primary.withAlpha(20)
             : Colors.transparent,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -771,11 +772,13 @@ class _TransactionCardSmallState extends State<TransactionCardSmall> {
 class ReportCard extends StatelessWidget {
   const ReportCard({
     super.key,
+    this.emoji,
     required this.upText,
     required this.dateText,
     this.isSelected = false,
   });
 
+  final String? emoji;
   final String upText;
   final String dateText;
   final bool isSelected;
@@ -791,9 +794,12 @@ class ReportCard extends StatelessWidget {
       width: double.infinity,
       decoration: decorationContainer(
         context: context,
-        colorFilled: colorScheme.primaryContainer,
-        // colorBorder: colorScheme.outlineVariant,
-        //boxShadow: softGrayShadows,
+
+        colorBorder: isSelected ? colorScheme.primary : Colors.transparent,
+        colorFilled: isSelected
+            ? colorScheme.primary.withAlpha(30)
+            : colorScheme.primaryContainer,
+
         radius: 10,
       ),
       child: Row(
@@ -804,7 +810,30 @@ class ReportCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.folder, size: 35, color: colorScheme.onSurfaceVariant),
+              isSelected
+                  ? ClipRRect(
+                      child: Container(
+                        width: 45,
+                        height: 45,
+                        decoration: decorationContainer(
+                          context: context,
+                          colorFilled: colorScheme.primary.withAlpha(90),
+                          radius: 100,
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          size: 25,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    )
+                  : emoji == null || emoji!.isEmpty
+                  ? Icon(
+                      Icons.folder,
+                      size: 35,
+                      color: colorScheme.onSurfaceVariant,
+                    )
+                  : Text(emoji!, style: TextStyle(fontSize: 30)),
               const SizedBox(width: AppDimensions.spacingMedium),
               SizedBox(
                 width: 250,

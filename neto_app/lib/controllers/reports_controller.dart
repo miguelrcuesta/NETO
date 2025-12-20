@@ -1,7 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Para DocumentSnapshot
 import 'package:neto_app/models/reports_model.dart';
-import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/services/reports_services.dart';
 import 'package:neto_app/widgets/app_snackbars.dart';
 // import 'package:neto_app/constants/app_utils.dart'; // Para mostrar SnackBar/Alertas
@@ -18,7 +18,7 @@ class PaginatedReportResult {
 class ReportsController {
   final ReportsService _reportsService = ReportsService();
 
-  final String _currentUserId = 'MIGUEL_USER_ID';
+  final String _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   String getUniqueReportTransactionId() {
     // Esto genera un ID único de documento de Firestore sin crearlo realmente.

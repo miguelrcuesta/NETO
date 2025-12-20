@@ -69,6 +69,13 @@ class ReportsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<TransactionModel> getSortedTransactions(String reportId) {
+    final report = getReportById(reportId);
+
+    return report.reportTransactions.values.toList()
+      ..sort((a, b) => b.date!.compareTo(a.date!));
+  }
+
   //====================================================================
   //FIREBASE/PAGINACIÓN
   //====================================================================
@@ -179,16 +186,12 @@ class ReportsProvider extends ChangeNotifier {
         .getUniqueReportTransactionId();
 
     // 2. CREAR EL OBJETO ReportTransactionModel INDEPENDIENTE
-    final newReportTransaction = ReportTransactionModel.fromTransactionModel(
-      reportId: report.reportId,
-      transaction: transactionmodel,
-      newReportTransactionId: newReportTransactionId, // Usamos el ID nuevo
-    );
+    final newReportTransaction = transactionmodel;
 
     // 3. ACTUALIZAR EL MAPA Y EL ReportModel
 
     // Clonar el mapa existente para mutarlo (buena práctica de inmutabilidad)
-    final updatedMap = Map<String, ReportTransactionModel>.from(
+    final updatedMap = Map<String, TransactionModel>.from(
       report.reportTransactions,
     );
 
@@ -223,7 +226,7 @@ class ReportsProvider extends ChangeNotifier {
   }) async {
     try {
       // 1. Clonar el mapa de transacciones existente para mantener la inmutabilidad
-      final updatedMap = Map<String, ReportTransactionModel>.from(
+      final updatedMap = Map<String, TransactionModel>.from(
         report.reportTransactions,
       );
 
@@ -259,17 +262,17 @@ class ReportsProvider extends ChangeNotifier {
   Future<void> addManualReportTransaction({
     required BuildContext context,
     required ReportModel report,
-    required ReportTransactionModel newTransaction,
+    required TransactionModel newTransaction,
   }) async {
     try {
       // 1. Clonar el mapa de transacciones existente para mantener la inmutabilidad
-      final updatedMap = Map<String, ReportTransactionModel>.from(
+      final updatedMap = Map<String, TransactionModel>.from(
         report.reportTransactions,
       );
 
       // 2. Insertar el objeto completo en el mapa usando su ID como clave
       // Esto es lo que permite que la transacción quede incrustada.
-      updatedMap[newTransaction.reportTransactionId] = newTransaction;
+      updatedMap[newTransaction.transactionId!] = newTransaction;
 
       // 3. Crear el ReportModel actualizado
       final updatedReport = report.copyWith(reportTransactions: updatedMap);
@@ -299,18 +302,18 @@ class ReportsProvider extends ChangeNotifier {
   Future<void> updateReportTransaction({
     required BuildContext context,
     required ReportModel report, // El informe actual
-    required ReportTransactionModel
+    required TransactionModel
     updatedTransaction, // La transacción con los cambios
   }) async {
     // 1. Clonar el mapa de transacciones existente
-    final updatedMap = Map<String, ReportTransactionModel>.from(
+    final updatedMap = Map<String, TransactionModel>.from(
       report.reportTransactions,
     );
 
     // 2. Reemplazar la transacción en el mapa usando su ID como clave
     // Esto sobrescribe la versión antigua con la nueva versión (updatedTransaction)
-    if (updatedMap.containsKey(updatedTransaction.reportTransactionId)) {
-      updatedMap[updatedTransaction.reportTransactionId] = updatedTransaction;
+    if (updatedMap.containsKey(updatedTransaction.transactionId)) {
+      updatedMap[updatedTransaction.transactionId!] = updatedTransaction;
     } else {
       // Manejar el error si se intenta editar una transacción que no existe
       debugPrint('Error: Transaction ID not found in report map.');

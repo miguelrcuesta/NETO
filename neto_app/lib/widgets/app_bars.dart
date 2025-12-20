@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:neto_app/pages/profile/profile_page_options.dart';
 
 class TitleAppbar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -25,7 +26,32 @@ class TitleAppbar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(title, style: textTheme.titleSmall),
       centerTitle: true,
       actions: actions,
-      leading: leading,
+
+      leading:
+          leading ??
+          GestureDetector(
+            onTap: () {
+              Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) =>
+                      const ProfilesOptionsPage(),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colorScheme.primaryContainer,
+              ),
+              margin: const EdgeInsets.only(left: 17.0),
+
+              height: 30,
+              width: 30,
+
+              child: Icon(CupertinoIcons.person_fill),
+            ),
+          ),
     );
   }
 
@@ -56,10 +82,32 @@ class TitleTabAppbar extends StatelessWidget implements PreferredSizeWidget {
     TextTheme textTheme = Theme.of(context).textTheme;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       elevation: 0,
       title: Text(title, style: textTheme.titleSmall),
       centerTitle: true,
+      leading: GestureDetector(
+        onTap: () {
+          Navigator.push<void>(
+            context,
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => const ProfilesOptionsPage(),
+            ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.primaryContainer,
+          ),
+          margin: const EdgeInsets.only(left: 17.0),
+
+          height: 30,
+          width: 30,
+
+          child: Icon(CupertinoIcons.person_fill),
+        ),
+      ),
       actions: actions,
       bottom: bottom,
     );
@@ -67,19 +115,23 @@ class TitleTabAppbar extends StatelessWidget implements PreferredSizeWidget {
 
   // Define el tamaño preferido del widget AppBar.
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
 }
 
-// ignore: must_be_immutable
 class TitleAppbarBack extends StatelessWidget implements PreferredSizeWidget {
   // Título del AppBar, es requerido.
   final String title;
-  PreferredSizeWidget? bottom;
+  final PreferredSizeWidget? bottom;
 
   // Acciones opcionales a la derecha (ej: botón de configuración).
   final List<Widget>? actions;
 
-  TitleAppbarBack({super.key, required this.title, this.actions, this.bottom});
+  const TitleAppbarBack({
+    super.key,
+    required this.title,
+    this.actions,
+    this.bottom,
+  });
 
   @override
   Widget build(BuildContext context) {

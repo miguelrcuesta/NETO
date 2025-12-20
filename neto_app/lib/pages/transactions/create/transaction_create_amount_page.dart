@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neto_app/constants/app_utils.dart';
@@ -7,7 +6,6 @@ import 'package:neto_app/models/reports_model.dart';
 import 'package:neto_app/models/transaction_model.dart';
 import 'package:neto_app/pages/transactions/create/transaction_create_details_page.dart';
 import 'package:neto_app/provider/transaction_provider.dart';
-import 'package:neto_app/services/api.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/widgets.dart';
 import 'package:provider/provider.dart';
@@ -60,7 +58,7 @@ class _TransactionAmountCreatePageState
 
   double amount = 0.0;
   String? descripcion;
-  String? selectedCategoryId;
+
   String? selectedCategoryChoice;
   String? selectedSubcategoryChoice;
   TransactionType? transactionType = TransactionType.expense;
@@ -101,119 +99,6 @@ class _TransactionAmountCreatePageState
     }
   }
 
-  Future<void> fetchNewIACategory(String transactionDescription) async {
-    final service = ApiService();
-    Map<String, String>? classificationResult;
-
-    // El setState que inicia la carga ya debe estar en obtenerSugerenciaDeCategoria
-
-    try {
-      debugPrint('Intentando clasificar: $transactionDescription');
-      // Usamos await en la llamada de servicio
-      classificationResult = await service.classifyGeminiTransaction(
-        transactionDescription,
-        currentLocale.languageCode,
-      );
-      debugPrint('Intentando clasificar: $classificationResult');
-    } catch (e) {
-      hasError = true;
-      hasSuccess = false;
-      // Manejo de errores de red o servicio
-      debugPrint('⚠️ Error al contactar al servicio de IA: $e');
-    }
-
-    // 2. Ejecutamos setState para actualizar la UI con el resultado
-    setState(() {
-      isLoading = false; // Finaliza la carga
-
-      if (classificationResult != null) {
-        final idCategory = classificationResult['idcategoria']!;
-        final category = classificationResult['categoria']!;
-        final subcategory = classificationResult['subcategoria']!;
-        final iaStatus = classificationResult['ia_status']!;
-
-        sugerenciaGemini = classificationResult;
-        debugPrint(
-          'Clasificación IA recibida: ${classificationResult.toString()}',
-        );
-
-        if (iaStatus == 'SUCCESS') {
-          debugPrint('✅ Clasificación IA Exitosa: $category / $subcategory');
-          hasSuccess = false;
-          hasError = false;
-          updateSelectedChoice(
-            idCategory,
-            category,
-            subcategory,
-          ); // Asignar a los campos de la UI
-        } else {
-          hasError = true;
-          hasSuccess = false;
-          isLoading = false;
-          debugPrint('⚠️ Clasificación IA Fallida. Estado: $iaStatus');
-        }
-      } else {
-        sugerenciaGemini = null;
-      }
-    });
-  }
-
-  Future<void> getGeminiCategory(String descripcion) async {
-    if (descripcion.isNotEmpty) {
-      if (isLoading) return;
-
-      setState(() {
-        isLoading = true;
-        sugerenciaGemini = null;
-      });
-
-      await fetchNewIACategory(descripcion);
-    }
-  }
-
-  void updateSelectedChoice(
-    String idCategory,
-    String categoriaName,
-    String subcategoriaString,
-  ) {
-    setState(() {
-      selectedCategoryId = idCategory;
-      selectedCategoryChoice = categoriaName;
-      selectedSubcategoryChoice = subcategoriaString;
-    });
-  }
-
-  // Future<void> _saveTransaction() async {
-  //   if (!(_formKey.currentState?.validate() ?? false)) {
-  //     return;
-  //   }
-
-  //   final provider = context.read<ReportsProvider>();
-  //   final double amount = double.parse(amountController.text.trim());
-
-  //   final String newTransactionId = reportsController
-  //       .getUniqueReportTransactionId();
-
-  //   final ReportTransactionModel newReportTransaction = ReportTransactionModel(
-  //     reportTransactionId: newTransactionId,
-  //     reportId: widget.reportModel.reportId,
-  //     amount: amount,
-  //     description: descriptionController.text.trim(),
-  //     date: selectedDate,
-  //     typeId: selectedTransactionType,
-  //     categoryId: selectedCategoryId ?? '',
-  //   );
-
-  //   await provider.addManualReportTransaction(
-  //     context: context,
-  //     report: widget.reportModel,
-  //     newTransaction: newReportTransaction,
-  //   );
-
-  //   if (!mounted) return;
-  //   Navigator.pop(context);
-  // }
-
   @override
   void initState() {
     transactionModel = widget.transactionModel ?? TransactionModel.empty();
@@ -235,7 +120,7 @@ class _TransactionAmountCreatePageState
       descriptionController.text = model.description ?? '';
       descripcion = model.description;
       //category / subcategory
-      selectedCategoryId = model.categoryid;
+
       selectedCategoryChoice = model.category;
       selectedSubcategoryChoice = model.subcategory;
       // tipo
@@ -309,12 +194,15 @@ class _TransactionAmountCreatePageState
 
                 transactionModel = transactionModel.copyWith(amount: amount);
 
+                //Editar
                 await showCupertinoModalPopup<void>(
                   context: context,
                   builder: (context) {
                     TextTheme textTheme = Theme.of(context).textTheme;
                     return CupertinoPageScaffold(
+                      backgroundColor: colorScheme.surface,
                       navigationBar: CupertinoNavigationBar(
+                        backgroundColor: colorScheme.surface,
                         leading: TextButton(
                           onPressed: () {
                             Navigator.pop(context);
@@ -337,12 +225,12 @@ class _TransactionAmountCreatePageState
                   },
                 );
 
-                if (!context.mounted) return;
-                // Cerramos todos los modales y volvemos a la primera ruta (TransactionsReadPage)
-                Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).popUntil((route) => route.isFirst);
+                // if (!context.mounted) return;
+                // // Cerramos todos los modales y volvemos a la primera ruta (TransactionsReadPage)
+                // Navigator.of(
+                //   context,
+                //   rootNavigator: true,
+                // ).popUntil((route) => route.isFirst);
               }
             },
             text: "Siguiente",

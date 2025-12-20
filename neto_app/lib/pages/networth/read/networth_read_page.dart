@@ -1,5 +1,3 @@
-// lib/pages/networth/networth_read_page.dart
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 // Asume que estos existen en tu proyecto:
@@ -8,8 +6,11 @@ import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/pages/networth/create/networth_type_create_page.dart';
 import 'package:neto_app/pages/networth/read/networth_asset_read_page.dart';
 import 'package:neto_app/provider/networth_provider.dart';
+import 'package:neto_app/provider/user_provider.dart';
 import 'package:neto_app/services/api.dart';
+import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_charts.dart'; // Contiene AssetPieChart
+import 'package:neto_app/widgets/app_empty_states.dart';
 import 'package:neto_app/widgets/app_fields.dart'; // Contiene decorationContainer
 import 'package:neto_app/widgets/widgets.dart'; // Contiene NetworthTypeCardResume
 import 'package:provider/provider.dart';
@@ -86,12 +87,6 @@ class _NetworthReadPageState extends State<NetworthReadPage> {
     if (provider.assets.isEmpty && !provider.isLoadingInitial) {
       provider.loadInitialAssets();
     }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
     _chartColors = chartColorsStatic;
   }
 
@@ -127,26 +122,29 @@ class _NetworthReadPageState extends State<NetworthReadPage> {
           backgroundColor: colorScheme.surface,
 
           // 1. AppBar Estándar (Fijo)
-          appBar: AppBar(
-            title: const Text('Activos'),
-            backgroundColor: colorScheme.surface,
-            elevation: 0,
+          appBar: TitleAppbar(
+            title: 'Activos',
             actions: [
               IconButton(
                 onPressed: () => _showCreationModal(context, colorScheme),
-                icon: Icon(CupertinoIcons.add, color: colorScheme.primary),
+                icon: Icon(
+                  CupertinoIcons.add_circled_solid,
+                  color: colorScheme.primary,
+                ),
               ),
-              IconButton(
-                onPressed: () =>
-                    fetchNewIACategory(provider.getAssetsJson().toString(), ''),
-                icon: Icon(CupertinoIcons.sparkles, color: colorScheme.primary),
-              ),
+              // IconButton(
+              //   onPressed: () =>
+              //       fetchNewIACategory(provider.getAssetsJson().toString(), ''),
+              //   icon: Icon(CupertinoIcons.sparkles, color: colorScheme.primary),
+              // ),
             ],
           ),
 
           // 2. Cuerpo: SingleChildScrollView para el desplazamiento
           body: RefreshIndicator(
-            onRefresh: provider.loadInitialAssets,
+            onRefresh: () {
+              return provider.loadInitialAssets();
+            },
             child: provider.isLoadingInitial
                 ? const Center(child: CircularProgressIndicator())
                 : provider.assets.isEmpty
@@ -179,7 +177,7 @@ class _NetworthReadPageState extends State<NetworthReadPage> {
     );
   }
 
-  // --- NUEVO: Contenedor del Gráfico (para SingleChildScrollView) ---
+  // --- Contenedor del Gráfico (para SingleChildScrollView) ---
   Widget _buildChartContainer(
     BuildContext context,
     NetWorthAssetProvider provider,
@@ -320,6 +318,7 @@ class _NetworthReadPageState extends State<NetworthReadPage> {
         decoration: decorationContainer(
           context: context,
           colorBorder: colorScheme.primaryContainer,
+          colorFilled: colorScheme.primaryContainer,
           radius: 20,
         ),
         child: Column(
@@ -366,24 +365,15 @@ class _NetworthReadPageState extends State<NetworthReadPage> {
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.savings,
-            size: 80,
-            color: colorScheme.onSurface.withOpacity(0.4),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Aún no tienes activos registrados',
-            textAlign: TextAlign.center,
-            style: textTheme.titleMedium,
-          ),
-        ],
-      ),
+    return AppEmptyStates(
+      asset: 'assets/animations/networth_empty.svg',
+      upText: 'No hay patrimonio creado',
+      downText:
+          'Añade tus cuentas y analiza su evolución a lo largo del tiempo',
+      btnText: 'Crear cuenta',
+      onPressed: () {
+        _showCreationModal(context, colorScheme);
+      },
     );
   }
 }

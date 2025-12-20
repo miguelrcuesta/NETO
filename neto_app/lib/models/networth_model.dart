@@ -45,7 +45,7 @@ abstract class AssetModel {
   final String type;
 
   final double currentBalance;
-  final List<BalanceHistory> history;
+  final List<BalanceHistory>? history;
   final DateTime? dateCreated;
   final DateTime? lastUpdated;
 
@@ -54,14 +54,14 @@ abstract class AssetModel {
     required this.name,
     required this.type,
     required this.currentBalance,
-    required this.history,
+    this.history,
     this.dateCreated,
     this.lastUpdated,
   });
 
   Map<String, dynamic> toJson();
 
-  /// 🔑 FIRMA AÑADIDA: Define el método copyWith en la clase abstracta.
+  /// FIRMA AÑADIDA: Define el método copyWith en la clase abstracta.
   /// Esto asegura que cualquier clase que extienda AssetModel deba implementarlo.
   AssetModel copyWith({
     String? assetId,
@@ -85,7 +85,7 @@ class NetWorthAsset extends AssetModel {
     required super.name,
     required super.type,
     required super.currentBalance,
-    required super.history,
+    super.history,
     super.dateCreated,
     super.lastUpdated,
   });
@@ -123,7 +123,9 @@ class NetWorthAsset extends AssetModel {
       'name': name,
       'type': type,
       'currentBalance': currentBalance,
-      'history': history.map((h) => h.toJson()).toList(),
+      'history': history != null
+          ? history!.map((h) => h.toJson()).toList()
+          : [],
       if (dateCreated != null) 'dateCreated': dateCreated,
       if (lastUpdated != null) 'lastUpdated': lastUpdated,
     };

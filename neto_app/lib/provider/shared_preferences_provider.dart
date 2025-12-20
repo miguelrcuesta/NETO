@@ -13,7 +13,7 @@ class SettingsProvider with ChangeNotifier {
   String get currentThemeMode => _prefsManager.themeMode;
   bool get isInitialized => _initialized;
 
-  // 1. 🚀 Inicialización: Llama al Manager para cargar los valores del disco
+  // 1. Inicialización: Llama al Manager para cargar los valores del disco
   Future<void> initializeSettings() async {
     if (_initialized) return;
 

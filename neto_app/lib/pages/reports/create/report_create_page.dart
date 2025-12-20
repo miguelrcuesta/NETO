@@ -1,7 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // 🔑 Importar Provider
-import 'package:neto_app/provider/reports_provider.dart'; // 🔑 Importar ReportsProvider
-// import 'package:neto_app/controllers/reports_controller.dart'; // ❌ Eliminado
+import 'package:neto_app/constants/app_strings.dart';
+import 'package:provider/provider.dart';
+import 'package:neto_app/provider/reports_provider.dart';
 import 'package:neto_app/models/reports_model.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -14,44 +15,44 @@ class ReportCreatePage extends StatefulWidget {
 }
 
 class _ReportCreatePageState extends State<ReportCreatePage> {
-  //########################################################################
-  // VARIABLES
-  //########################################################################
+  @override
+  void dispose() {
+    nameReportController.dispose();
+    super.dispose();
+  }
 
-  // ❌ Eliminado: ReportsController reportsController = ReportsController();
+  String _selectedEmoji = ''; // Estado inicial del emoji
 
-  //########################################################################
-  // CONTROLLERS
-  //########################################################################
   TextEditingController nameReportController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  //########################################################################
-  // FUNCIONES
-  //########################################################################
   String? nameReportValidator(String? value) {
-    // 1. Comprueba si el valor es nulo
     if (value == null) {
       return 'El nombre del informe es obligatorio.';
     }
-
-    // 2. Comprueba si el valor está vacío (después de eliminar espacios en blanco)
     if (value.trim().isEmpty) {
       return 'El nombre del informe no puede estar vacío.';
     }
     return null;
   }
 
-  //########################################################################
-  // BUILD
-  //########################################################################
+  List<Map<String, dynamic>> _filterEmojis(String currentSearchText) {
+    if (currentSearchText.isEmpty) {
+      return AppEmojis.allEmojis;
+    } else {
+      final query = currentSearchText.toLowerCase();
+      return AppEmojis.allEmojis.where((emoji) {
+        final name = (emoji['name'] as String).toLowerCase();
+        return name.contains(query);
+      }).toList();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
 
-    // 🔑 Obtener el Provider para ejecutar la acción (listen: false)
     final reportsProvider = context.read<ReportsProvider>();
 
     return Form(
@@ -62,6 +63,47 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
           children: [
             Text("Crear informe", style: textTheme.titleSmall),
             const SizedBox(height: 30),
+
+            ClipOval(
+              child: GestureDetector(
+                onTap: () {
+                  _showEmojis(context, textTheme, colorScheme);
+                },
+
+                child: Container(
+                  alignment: Alignment.center,
+                  color: colorScheme.surface,
+                  width: 90,
+                  height: 90,
+                  // child: _selectedEmoji.isEmpty ? Icons :Text(
+                  //   _selectedEmoji,
+                  //   textAlign: TextAlign.center,
+                  //   style: const TextStyle(fontSize: 40, height: 2.0),
+                  // ),
+                  child: _selectedEmoji.isEmpty
+                      ? ClipOval(
+                          child: Container(
+                            height: 80,
+                            width: 80,
+                            color: colorScheme.surface,
+                            child: Icon(
+                              Icons.emoji_emotions_outlined,
+                              size: 35,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          _selectedEmoji,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 40, height: 2.0),
+                        ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             StandarTextField(
               controller: nameReportController,
               validator: nameReportValidator,
@@ -72,38 +114,150 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
               textInputAction: TextInputAction.done,
             ),
             const Spacer(),
-            StandarButton(
-              onPressed: () async {
-                // 1. Validar el formulario
-                if (!(_formKey.currentState?.validate() ?? false)) {
-                  debugPrint('ReportCreatePage: name field validation failed');
-                  return;
-                }
-                debugPrint("Crear informe: ${nameReportController.text}");
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: StandarButton(
+                onPressed: () async {
+                  if (!(_formKey.currentState?.validate() ?? false)) {
+                    return;
+                  }
 
-                // 2. Crear el modelo con los datos
-                final newReport = ReportModel.empty().copyWith(
-                  name: nameReportController.text.trim(),
-                  dateCreated: DateTime.now(),
-                );
+                  final newReport = ReportModel.empty().copyWith(
+                    name: nameReportController.text.trim(),
+                    emoji: _selectedEmoji,
+                    dateCreated: DateTime.now(),
+                  );
 
-                // 3.  Llamar al Provider para crear y actualizar la lista
-                // El Provider se encarga de llamar al Controller y luego a loadInitialReports()
-                await reportsProvider.createReportAndUpdate(
-                  context: context,
-                  newReport: newReport,
-                );
+                  await reportsProvider.createReportAndUpdate(
+                    context: context,
+                    newReport: newReport,
+                  );
 
-                if (!context.mounted) return;
-                nameReportController.dispose();
-                Navigator.pop(context);
-              },
-              text: "Crear informe",
-              radius: 50,
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                },
+                text: "Crear informe",
+                radius: 50,
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<dynamic> _showEmojis(
+    BuildContext context,
+    TextTheme textTheme,
+
+    ColorScheme colorScheme,
+  ) {
+    return showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext modalContext) {
+        String currentSearchText = '';
+        List filteredEmojis = _filterEmojis(currentSearchText);
+        return StatefulBuilder(
+          builder: (BuildContext innerContext, mySetState) {
+            return CupertinoPageScaffold(
+              navigationBar: CupertinoNavigationBar(
+                leading: CupertinoButton(
+                  onPressed: () => Navigator.pop(modalContext),
+                  padding: EdgeInsets.zero,
+                  child: Text(
+                    "Atrás",
+                    style: textTheme.bodySmall!.copyWith(color: Colors.blue),
+                  ),
+                ),
+                backgroundColor: CupertinoColors.white,
+                border: const Border(
+                  bottom: BorderSide(
+                    color: CupertinoColors.systemGrey5,
+                    width: 0.0,
+                  ),
+                ),
+              ),
+              child: Scaffold(
+                body: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                      child: CupertinoSearchTextField(
+                        onChanged: (value) {
+                          mySetState(() {
+                            currentSearchText = value;
+                            filteredEmojis = _filterEmojis(currentSearchText);
+                            //debugPrint(filteredEmojis.toString());
+                          });
+
+                          // setState(() {
+                          //   currentSearchText = value;
+                          //   filteredEmojis = _filterEmojis(currentSearchText);
+                          // });
+                        },
+                        placeholder: 'Buscar emoji por nombre',
+                        backgroundColor: colorScheme.outlineVariant.withOpacity(
+                          0.5,
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: GridView.builder(
+                          itemCount: filteredEmojis.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                // mainAxisSpacing: 5.0,
+                                // crossAxisSpacing: 5.0,
+                                // childAspectRatio: 0.5,
+                              ),
+                          itemBuilder: (context, index) {
+                            final emojiData = filteredEmojis[index];
+                            final currentEmoji = emojiData["emoji"] as String;
+
+                            return Center(
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedEmoji = currentEmoji;
+                                  });
+                                  Navigator.pop(modalContext);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: Text(
+                                    currentEmoji,
+                                    style: const TextStyle(fontSize: 34),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    if (filteredEmojis.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 40.0),
+                        child: Text(
+                          'No se encontraron emojis.',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

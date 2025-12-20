@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_validators.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/provider/user_provider.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -70,8 +72,15 @@ class _LoginPageState extends State<LoginPage> {
               radius: 100,
               height: AppDimensions.inputFieldHeight,
               width: double.infinity,
-              onPressed: () {
-                debugPrint("Send email with reset pasword");
+              onPressed: () async {
+                await Provider.of<UserProvider>(context, listen: false).login(
+                  context,
+                  emailtextController.text.trim(),
+                  passwordtextController.text,
+                );
+
+                if (!context.mounted) return;
+                Navigator.pop(context);
               },
               text: appLocalizations.buttonSingIn,
             ),
@@ -97,6 +106,7 @@ class _LoginPageState extends State<LoginPage> {
 
   StandarTextField _widgetemailfield(ColorScheme colorScheme) {
     return StandarTextField(
+      textInputAction: TextInputAction.next,
       enable: true,
       controller: emailtextController,
       maxLines: 1,
@@ -118,6 +128,7 @@ class _LoginPageState extends State<LoginPage> {
     AppLocalizations appLocalizations,
   ) {
     return StandarTextField(
+      textInputAction: TextInputAction.next,
       obscoreText: showPassword == false ? true : false,
       suffixIcon: IconButton(
         onPressed: () {

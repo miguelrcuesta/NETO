@@ -2,9 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:neto_app/models/networth_model.dart'; // Importa AssetModel y NetWorthAsset
+
 import 'package:neto_app/services/networth_services.dart';
 import 'package:neto_app/widgets/app_snackbars.dart'; // Asume que tienes este helper de UI
-import 'package:cloud_firestore/cloud_firestore.dart'; // Necesario para DocumentSnapshot
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Definición de la clase de resultado paginado (Debe estar disponible para el Controller)
 class PaginatedAssetResult {
@@ -19,9 +20,6 @@ class PaginatedAssetResult {
 class NetWorthAssetController {
   final NetWorthAssetService _assetService;
 
-  // 🔑 ID del usuario (Se pasa a la capa de Service o se gestiona aquí)
-  final String _currentUserId = 'MIGUEL_USER_ID';
-
   NetWorthAssetController() : _assetService = NetWorthAssetService();
 
   // =========================================================
@@ -35,7 +33,7 @@ class NetWorthAssetController {
     DocumentSnapshot? lastDocument,
     int pageSize = 10,
   }) async {
-    // 🔑 Llamada al Service, que ahora debe implementar la lógica de paginación
+    //Llamada al Service, que ahora debe implementar la lógica de paginación
     final result = await _assetService.fetchAssetsPaginated(
       userId: userId,
       lastDocument: lastDocument,
@@ -54,12 +52,11 @@ class NetWorthAssetController {
   // =========================================================
 
   /// Carga todos los activos del usuario desde Firestore (Mantenido para compatibilidad o para la carga total, aunque el Provider usará la paginada).
-  Future<List<AssetModel>> loadAllAssets() async {
-    // ⚠️ Ahora devuelve los datos, no actualiza el estado interno.
+  Future<List<AssetModel>> loadAllAssets(String userId) async {
     try {
-      return await _assetService.loadAssetsByUser(_currentUserId);
+      return await _assetService.loadAssetsByUser(userId);
     } catch (e) {
-      debugPrint('🚨 Error al cargar todos los activos: $e');
+      debugPrint('Error al cargar todos los activos: $e');
       return []; // Devuelve una lista vacía en caso de error
     }
   }
@@ -68,19 +65,14 @@ class NetWorthAssetController {
   /// Devuelve el ID generado por Firestore.
   Future<String?> createAsset({
     required BuildContext context,
-    required NetWorthAsset newAsset,
-    required String currentUserId, // Recibimos el ID desde el Provider
+    required AssetModel newAsset,
+    required String currentUserId,
   }) async {
     try {
       // 1. Crear el activo y obtener el nuevo ID
       final newId = await _assetService.createAsset(newAsset, currentUserId);
 
-      // 2. Mostrar feedback (lógica de UI permitida aquí)
-      if (newId != null && context.mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(AppSnackbars.success(message: 'Activo creado con éxito.'));
-      }
-
-      return newId; // 🔑 Devolvemos el ID al Provider para que lo gestione
+      return newId; //Devolvemos el ID al Provider para que lo gestione
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -71,23 +71,38 @@ enum Expenses {
     iconData: Icons.home_filled,
     nombre: 'Vivienda y Hogar',
     subcategorias: [
+      // PAGOS RECURRENTES GRANDES
       'Alquiler',
       'Hipoteca',
-      'Servicios (Luz, Agua, Gas)',
+      'Comunidad/Vecinos',
+      'Seguro de Vivienda',
+      // GASTOS EXTRAORDINARIOS
+      'Derramas',
+      // SERVICIOS Y SUMINISTROS
+      'Electricidad',
+      'Agua',
+      'Gas/Calefacción',
       'Internet y Telefonía',
+      'Tasa de Basura/Reciclaje',
+      // IMPUESTOS Y MANTENIMIENTO
+      'Impuestos de Propiedad (IBI)',
       'Reparaciones y Mantenimiento',
-      'Muebles y Decoración',
+
+      // COMPRAS DEL HOGAR
+      'Mobiliario y Decoración',
+      'Electrodomésticos',
+      'Productos de Limpieza',
     ],
     color: Colors.purple,
   ),
   alimentacion(
     id: 'ALIMENTACION',
-    emoji: '🛒',
-    iconData: Icons.shopping_cart,
+    emoji: '',
+    iconData: Icons.restaurant,
     nombre: 'Alimentación',
     subcategorias: [
-      'Supermercado (Compras)',
-      'Restaurantes (comer fuera)',
+      'Supermercados',
+      'Restaurantes',
       'Comida Rápida',
       'Cafeterías y Bares',
     ],
@@ -99,6 +114,7 @@ enum Expenses {
     iconData: Icons.directions_car_filled,
     nombre: 'Transporte',
     subcategorias: [
+      'Plaza de garaje',
       'Combustible/Gasolina',
       'Transporte Público',
       'Taxi/VTC',
@@ -106,6 +122,23 @@ enum Expenses {
       'Peajes y Parking',
     ],
     color: Colors.orange,
+  ),
+  educacionFormacion(
+    id: 'EDUCACION',
+    emoji: '📚',
+    iconData: Icons.school,
+    nombre: 'Educación y Formación',
+    subcategorias: [
+      // ETAPAS EDUCATIVAS
+      'Guardería',
+      'Colegio',
+      'Universidad (Grado)',
+      'Universidad (Master)',
+      'Academia',
+      'Clases Particulares',
+    ],
+
+    color: Colors.teal,
   ),
   suscripciones(
     id: 'SUSCRIPCIONES',
@@ -150,8 +183,10 @@ enum Expenses {
     iconData: Icons.videogame_asset,
     nombre: 'Ocio y Diversión',
     subcategorias: [
-      'Cine/Teatro/Conciertos',
-      'Viajes y Vacaciones',
+      'Teatro',
+      'Cine',
+      'Conciertos',
+      'Viajes',
       'Hobbies',
       'Compras de Electrónica',
       'Salidas nocturnas',
@@ -163,8 +198,39 @@ enum Expenses {
     emoji: '👕',
     iconData: Icons.shopping_bag_rounded,
     nombre: 'Ropa y Accesorios',
-    subcategorias: ['Ropa', 'Calzado', 'Accesorios', 'Lavandería/Tintorería'],
+    subcategorias: [
+      'Ropa',
+      'Calzado',
+      'Accesorios',
+      'Costura',
+      'Lavandería/Tintorería',
+    ],
     color: Colors.amber,
+  ),
+  tecnologiaElectronica(
+    id: 'TECNOLOGIA',
+    emoji: '💻',
+    iconData: Icons.devices_other,
+    nombre: 'Tecnología y Electrónica',
+    subcategorias: [
+      // EQUIPOS PRINCIPALES
+      'Teléfonos y Smartphones',
+      'Ordenadores y Laptops',
+      'Tablets y E-readers',
+      'Televisores y Audio/Vídeo (Cine en Casa)',
+      'Consolas y Videojuegos (Hardware)', // Se separa de ocio puro
+      // PERIFÉRICOS Y ACCESORIOS
+      'Accesorios y Periféricos', // Ratones, teclados, fundas, cables, discos externos
+      'Dispositivos Vestibles (Smartwatch, Pulseras)',
+      'Cámaras y Equipos de Fotografía',
+
+      // MANTENIMIENTO Y GASTOS RELACIONADOS
+      'Reparación de Dispositivos',
+      'Garantías y Seguros de Electrónica',
+      'Componentes (Hardware, Tarjetas Gráficas, RAM)',
+    ],
+
+    color: Colors.blueGrey, // Color neutro, se puede ajustar
   ),
   otrosGastos(
     id: 'OTROS',
@@ -172,6 +238,7 @@ enum Expenses {
     iconData: Icons.trending_down,
     nombre: 'Otros',
     subcategorias: [
+      'Otros',
       'Pago de Préstamos/Tarjetas',
       'Regalos',
       'Mascotas (Comida, Veterinario)',
@@ -256,6 +323,7 @@ enum Incomes {
     emoji: '',
     nombre: 'Otros',
     subcategorias: [
+      'Otros',
       'Regalos Recibidos',
       'Devolución de Impuestos',
       'Reembolsos',
@@ -342,7 +410,7 @@ extension NetWorthAssetTypeDetails on NetWorthAssetType {
   String get title {
     switch (this) {
       case NetWorthAssetType.bankAccount:
-        return 'Cuenta Bancaria';
+        return 'Cuentas Bancarias';
       case NetWorthAssetType.investment:
         return 'Inversiones';
       case NetWorthAssetType.longTermAsset:

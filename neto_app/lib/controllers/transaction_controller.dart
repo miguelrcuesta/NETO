@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:neto_app/provider/transaction_provider.dart';
 import 'package:neto_app/services/transactions_services.dart';
@@ -28,7 +29,7 @@ class TransactionController {
   final List<String> transactionsSelected = [];
 
   final int _pageSize = 20;
-  final String _currentUserId = 'MIGUEL_USER_ID';
+  final String _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   // =========================================================
   // LLAMADAS AL SERVICES
@@ -38,12 +39,13 @@ class TransactionController {
   Future<PaginatedTransactionResult> getTransactionsPaginated({
     String? type,
     DocumentSnapshot? startAfterDocument,
+    int? limit,
   }) async {
     try {
       debugPrint("Llamando al controller: getTransactionsPaginated");
       // 1. Crear la consulta con el servicio
       final Query query = _transactionService.getTransactions(
-        pageSize: _pageSize,
+        pageSize: limit ?? _pageSize,
         type: type,
         userId: _currentUserId,
       );
@@ -166,8 +168,13 @@ class TransactionController {
       );
 
       if (success) {
-        // 2. Mostrar un mensaje de éxito al usuario (opcional)
-        // AppUtils.showSuccess(context, 'Se eliminaron ${idsToDelete.length} movimientos.');
+        // 2. Mostrar un mensaje de éxito al usuario (opcional)ç
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            AppSnackbars.success(message: '¡Eliminado correctamente!'),
+          );
+        }
+
         debugPrint(
           "Controller: ${idsToDelete.length} transacciones eliminadas con éxito.",
         );

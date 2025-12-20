@@ -5,17 +5,19 @@ class ReportModel {
   // 1. Identificadores y Metadatos
   final String reportId;
   final String userId;
+  final String? emoji;
   final String name;
   final String? description;
   final DateTime dateCreated;
 
-  final Map<String, ReportTransactionModel> reportTransactions;
+  final Map<String, TransactionModel> reportTransactions;
 
   // Constructor
   ReportModel({
     required this.reportId,
     required this.userId,
     required this.name,
+    this.emoji,
     this.description,
     required this.dateCreated,
     required this.reportTransactions,
@@ -29,14 +31,16 @@ class ReportModel {
     String? reportId,
     String? userId,
     String? name,
+    String? emoji,
     String? description,
     DateTime? dateCreated,
-    Map<String, ReportTransactionModel>? reportTransactions,
+    Map<String, TransactionModel>? reportTransactions,
   }) {
     return ReportModel(
       reportId: reportId ?? this.reportId,
       userId: userId ?? this.userId,
       name: name ?? this.name,
+      emoji: emoji ?? this.emoji,
       description: description ?? this.description,
       dateCreated: dateCreated ?? this.dateCreated,
       reportTransactions: reportTransactions ?? this.reportTransactions,
@@ -51,6 +55,7 @@ class ReportModel {
     return ReportModel(
       reportId: '',
       name: '',
+      emoji: null,
       userId: '',
       dateCreated: DateTime.now(),
       reportTransactions: {},
@@ -62,15 +67,14 @@ class ReportModel {
   // ----------------------------------------------------------------------
 
   Map<String, dynamic> _reportTransactionsToJson() {
-    return reportTransactions.map(
-      (key, value) => MapEntry(key, value.toJson()),
-    );
+    return reportTransactions.map((key, value) => MapEntry(key, value.toMap()));
   }
 
   Map<String, dynamic> toJson() {
     return {
       'reportId': reportId,
       'userId': userId,
+      'emoji': emoji,
       'name': name,
       'description': description,
       'dateCreated': dateCreated, // Se guarda como Timestamp
@@ -83,13 +87,13 @@ class ReportModel {
   // ----------------------------------------------------------------------
 
   // Convierte Map<String, dynamic> de Firestore a objetos ReportTransactionModel
-  static Map<String, ReportTransactionModel> _reportTransactionsFromJson(
+  static Map<String, TransactionModel> _reportTransactionsFromJson(
     Map<String, dynamic> jsonMap,
   ) {
     return jsonMap.map(
       (key, value) => MapEntry(
         key,
-        ReportTransactionModel.fromJson(value as Map<String, dynamic>),
+        TransactionModel.fromMap(value as Map<String, dynamic>),
       ),
     );
   }
@@ -105,6 +109,7 @@ class ReportModel {
     return ReportModel(
       reportId: json['reportId'] as String,
       userId: json['userId'] as String,
+      emoji: json['emoji'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
       dateCreated: dateCreated,
@@ -113,138 +118,138 @@ class ReportModel {
   }
 }
 
-class ReportTransactionModel {
-  // Identificadores
-  final String reportTransactionId;
-  final String reportId; // ID del informe al que pertenece
+// class ReportTransactionModel {
+//   // Identificadores
+//   final String reportTransactionId;
+//   final String reportId; // ID del informe al que pertenece
 
-  // Datos
-  final double amount;
-  final String typeId; // Ej: 'expense' o 'income'
-  final String categoryId; // ID de la categoría (para poder clasificar)
-  final String? subcategoryId; // Subcategoría (opcional)
-  final DateTime date;
-  final String description;
+//   // Datos
+//   final double amount;
+//   final String typeId; // Ej: 'expense' o 'income'
+//   final String categoryId; // ID de la categoría (para poder clasificar)
+//   final String? subcategoryId; // Subcategoría (opcional)
+//   final DateTime date;
+//   final String description;
 
-  // Constructor
-  ReportTransactionModel({
-    required this.reportTransactionId,
-    required this.reportId,
-    required this.amount,
-    required this.typeId,
-    required this.categoryId,
-    this.subcategoryId,
-    required this.date,
-    required this.description,
-  });
+//   // Constructor
+//   ReportTransactionModel({
+//     required this.reportTransactionId,
+//     required this.reportId,
+//     required this.amount,
+//     required this.typeId,
+//     required this.categoryId,
+//     this.subcategoryId,
+//     required this.date,
+//     required this.description,
+//   });
 
-  // ----------------------------------------------------------------------
-  // 1. copyWith
-  // ----------------------------------------------------------------------
+//   // ----------------------------------------------------------------------
+//   // 1. copyWith
+//   // ----------------------------------------------------------------------
 
-  ReportTransactionModel copyWith({
-    String? reportTransactionId,
-    String? reportId,
-    double? amount,
-    String? typeId,
-    String? categoryId,
-    String? subcategoryId,
-    DateTime? date,
-    String? description,
-  }) {
-    return ReportTransactionModel(
-      reportTransactionId: reportTransactionId ?? this.reportTransactionId,
-      reportId: reportId ?? this.reportId,
-      amount: amount ?? this.amount,
-      typeId: typeId ?? this.typeId,
-      categoryId: categoryId ?? this.categoryId,
-      subcategoryId: subcategoryId ?? this.subcategoryId,
-      date: date ?? this.date,
-      description: description ?? this.description,
-    );
-  }
+//   ReportTransactionModel copyWith({
+//     String? reportTransactionId,
+//     String? reportId,
+//     double? amount,
+//     String? typeId,
+//     String? categoryId,
+//     String? subcategoryId,
+//     DateTime? date,
+//     String? description,
+//   }) {
+//     return ReportTransactionModel(
+//       reportTransactionId: reportTransactionId ?? this.reportTransactionId,
+//       reportId: reportId ?? this.reportId,
+//       amount: amount ?? this.amount,
+//       typeId: typeId ?? this.typeId,
+//       categoryId: categoryId ?? this.categoryId,
+//       subcategoryId: subcategoryId ?? this.subcategoryId,
+//       date: date ?? this.date,
+//       description: description ?? this.description,
+//     );
+//   }
 
-  // ----------------------------------------------------------------------
-  // 2. empty
-  // ----------------------------------------------------------------------
+//   // ----------------------------------------------------------------------
+//   // 2. empty
+//   // ----------------------------------------------------------------------
 
-  factory ReportTransactionModel.empty({required String reportId}) {
-    // Requiere el reportId ya que una ReportTransactionModel siempre debe estar vinculada a un informe.
-    return ReportTransactionModel(
-      reportTransactionId: '',
-      reportId: reportId,
-      amount: 0.0,
-      typeId: 'expense', // Valor por defecto
-      categoryId: '',
-      subcategoryId: null,
-      date: DateTime.now(),
-      description: '',
-    );
-  }
+//   factory ReportTransactionModel.empty({required String reportId}) {
+//     // Requiere el reportId ya que una ReportTransactionModel siempre debe estar vinculada a un informe.
+//     return ReportTransactionModel(
+//       reportTransactionId: '',
+//       reportId: reportId,
+//       amount: 0.0,
+//       typeId: 'expense', // Valor por defecto
+//       categoryId: '',
+//       subcategoryId: null,
+//       date: DateTime.now(),
+//       description: '',
+//     );
+//   }
 
-  // ----------------------------------------------------------------------
-  // 3. toJson
-  // ----------------------------------------------------------------------
+//   // ----------------------------------------------------------------------
+//   // 3. toJson
+//   // ----------------------------------------------------------------------
 
-  Map<String, dynamic> toJson() {
-    return {
-      'reportTransactionId': reportTransactionId,
-      'reportId': reportId,
-      'amount': amount,
-      'typeId': typeId,
-      'categoryId': categoryId,
-      'subcategoryId': subcategoryId,
-      'date': date, // Se guarda como Timestamp en Firestore
-      'description': description,
-    };
-  }
+//   Map<String, dynamic> toJson() {
+//     return {
+//       'reportTransactionId': reportTransactionId,
+//       'reportId': reportId,
+//       'amount': amount,
+//       'typeId': typeId,
+//       'categoryId': categoryId,
+//       'subcategoryId': subcategoryId,
+//       'date': date, // Se guarda como Timestamp en Firestore
+//       'description': description,
+//     };
+//   }
 
-  // ----------------------------------------------------------------------
-  // 4. fromJson
-  // ----------------------------------------------------------------------
+//   // ----------------------------------------------------------------------
+//   // 4. fromJson
+//   // ----------------------------------------------------------------------
 
-  factory ReportTransactionModel.fromJson(Map<String, dynamic> json) {
-    // Convertir el Timestamp de Firestore a DateTime
-    DateTime transactionDate;
-    if (json['date'] is Timestamp) {
-      transactionDate = (json['date'] as Timestamp).toDate();
-    } else if (json['date'] is String) {
-      transactionDate = DateTime.parse(json['date'] as String);
-    } else {
-      transactionDate = DateTime.now();
-    }
+//   factory ReportTransactionModel.fromJson(Map<String, dynamic> json) {
+//     // Convertir el Timestamp de Firestore a DateTime
+//     DateTime transactionDate;
+//     if (json['date'] is Timestamp) {
+//       transactionDate = (json['date'] as Timestamp).toDate();
+//     } else if (json['date'] is String) {
+//       transactionDate = DateTime.parse(json['date'] as String);
+//     } else {
+//       transactionDate = DateTime.now();
+//     }
 
-    return ReportTransactionModel(
-      reportTransactionId: json['reportTransactionId'] as String,
-      reportId: json['reportId'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      typeId: json['typeId'] as String,
-      categoryId: json['categoryId'] as String,
-      subcategoryId: json['subcategoryId'] as String?,
-      date: transactionDate,
-      description: json['description'] as String,
-    );
-  }
+//     return ReportTransactionModel(
+//       reportTransactionId: json['reportTransactionId'] as String,
+//       reportId: json['reportId'] as String,
+//       amount: (json['amount'] as num).toDouble(),
+//       typeId: json['typeId'] as String,
+//       categoryId: json['categoryId'] as String,
+//       subcategoryId: json['subcategoryId'] as String?,
+//       date: transactionDate,
+//       description: json['description'] as String,
+//     );
+//   }
 
-  // ----------------------------------------------------------------------
-  // 5. Factory para copiar desde la Transacción Global
-  // ----------------------------------------------------------------------
+//   // ----------------------------------------------------------------------
+//   // 5. Factory para copiar desde la Transacción Global
+//   // ----------------------------------------------------------------------
 
-  /// Crea una nueva ReportTransactionModel copiando los datos de una TransactionModel global.
-  factory ReportTransactionModel.fromTransactionModel({
-    required String reportId,
-    required TransactionModel transaction,
-    required String newReportTransactionId,
-  }) {
-    return ReportTransactionModel(
-      reportTransactionId: newReportTransactionId,
-      reportId: reportId,
-      amount: transaction.amount,
-      typeId: transaction.type,
-      categoryId: transaction.categoryid,
-      subcategoryId: transaction.subcategory,
-      date: transaction.date!,
-      description: transaction.description ?? '',
-    );
-  }
-}
+//   /// Crea una nueva ReportTransactionModel copiando los datos de una TransactionModel global.
+//   factory ReportTransactionModel.fromTransactionModel({
+//     required String reportId,
+//     required TransactionModel transaction,
+//     required String newReportTransactionId,
+//   }) {
+//     return ReportTransactionModel(
+//       reportTransactionId: newReportTransactionId,
+//       reportId: reportId,
+//       amount: transaction.amount,
+//       typeId: transaction.type,
+//       categoryId: transaction.categoryid,
+//       subcategoryId: transaction.subcategory,
+//       date: transaction.date!,
+//       description: transaction.description ?? '',
+//     );
+//   }
+// }

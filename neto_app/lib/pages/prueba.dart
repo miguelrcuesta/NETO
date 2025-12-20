@@ -30,7 +30,16 @@ class MyWidget extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colorScheme.primaryContainer,
-      body: Text('Cuentas bancarias'),
+      body: Center(
+        child: Column(
+          children: [
+            Text('Cuentas bancarias'),
+            Text('Cuentas bancarias'),
+            Text('Cuentas bancarias'),
+            Text('Cuentas bancarias'),
+          ],
+        ),
+      ),
     );
   }
 }

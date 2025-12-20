@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/constants/app_validators.dart';
 import 'package:neto_app/l10n/app_localizations.dart';
+import 'package:neto_app/provider/user_provider.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
+import 'package:provider/provider.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -80,60 +82,6 @@ class _SignUpPageState extends State<SignUpPage> {
               _widgetpasswordfield(context, colorScheme, appLocalizations),
               SizedBox(height: AppDimensions.spacingMedium),
 
-              // ListTile(
-              //   minVerticalPadding: 2,
-              //   minTileHeight: 0,
-              //   visualDensity: VisualDensity.compact,
-              //   dense: true,
-              //   minLeadingWidth: 0,
-              //   titleAlignment: ListTileTitleAlignment.center,
-              //   leading: hasMinLength
-              //       ? Icon(CupertinoIcons.check_mark, size: 16, color: Colors.green)
-              //       : Icon(CupertinoIcons.xmark, size: 16, color: Colors.red),
-              //   title: Text(appLocalizations.passwordRuleMinLength),
-              //   titleTextStyle: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
-              // ),
-
-              // ListTile(
-              //   minVerticalPadding: 2,
-              //   minTileHeight: 0,
-              //   visualDensity: VisualDensity.compact,
-              //   dense: true,
-              //   minLeadingWidth: 0,
-              //   titleAlignment: ListTileTitleAlignment.center,
-              //   leading: hasNumber
-              //       ? Icon(CupertinoIcons.check_mark, size: 16, color: Colors.green)
-              //       : Icon(CupertinoIcons.xmark, size: 16, color: Colors.red),
-              //   title: Text(appLocalizations.passwordRuleMinNumber),
-              //   titleTextStyle: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
-              // ),
-              // ListTile(
-              //   minVerticalPadding: 2,
-              //   minTileHeight: 0,
-              //   visualDensity: VisualDensity.compact,
-              //   dense: true,
-              //   minLeadingWidth: 0,
-              //   titleAlignment: ListTileTitleAlignment.center,
-              //   leading: hasUppercase
-              //       ? Icon(CupertinoIcons.check_mark, size: 16, color: Colors.green)
-              //       : Icon(CupertinoIcons.xmark, size: 16, color: Colors.red),
-              //   title: Text(appLocalizations.passwordRuleMinUppercase),
-              //   titleTextStyle: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
-              // ),
-              // ListTile(
-              //   minVerticalPadding: 2,
-              //   minTileHeight: 0,
-              //   visualDensity: VisualDensity.compact,
-              //   dense: true,
-              //   minLeadingWidth: 0,
-              //   titleAlignment: ListTileTitleAlignment.center,
-              //   leading: samePassword
-              //       ? Icon(CupertinoIcons.check_mark, size: 16, color: Colors.green)
-              //       : Icon(CupertinoIcons.xmark, size: 16, color: Colors.red),
-              //   title: Text(appLocalizations.passwordRuleMatch),
-              //   titleTextStyle: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
-              // ),
-              SizedBox(height: AppDimensions.spacingExtraSmall),
               _widgetrepeatpasswordfield(
                 context,
                 colorScheme,
@@ -145,13 +93,21 @@ class _SignUpPageState extends State<SignUpPage> {
                 radius: 100,
                 height: AppDimensions.inputFieldHeight,
                 width: double.infinity,
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    debugPrint("Send email with reset pasword");
+                    await Provider.of<UserProvider>(
+                      context,
+                      listen: false,
+                    ).register(
+                      context,
+                      emailtextController.text.trim(),
+                      passwordtextController.text,
+                    );
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
                   }
-                  debugPrint("Error form");
                 },
-                text: appLocalizations.buttonSingIn,
+                text: appLocalizations.buttonSingUp,
               ),
             ],
           ),
@@ -176,6 +132,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   StandarTextField _widgetemailfield(ColorScheme colorScheme) {
     return StandarTextField(
+      textInputAction: TextInputAction.next,
       enable: true,
       controller: emailtextController,
       maxLines: 1,
@@ -197,6 +154,7 @@ class _SignUpPageState extends State<SignUpPage> {
     AppLocalizations appLocalizations,
   ) {
     return StandarTextField(
+      textInputAction: TextInputAction.next,
       obscoreText: showPassword == false ? true : false,
       onChange: (value) {
         setState(() {
@@ -241,6 +199,7 @@ class _SignUpPageState extends State<SignUpPage> {
     AppLocalizations appLocalizations,
   ) {
     return StandarTextField(
+      textInputAction: TextInputAction.done,
       obscoreText: showPasswordRepeated == false ? true : false,
       suffixIcon: IconButton(
         onPressed: () {

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:neto_app/models/reports_model.dart';
 
 class TransactionModel {
   final String userId;

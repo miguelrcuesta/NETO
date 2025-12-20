@@ -76,7 +76,6 @@ class _TransactionDetailsCreatePageState
   );
   double amount = 0.0;
   String? descripcion;
-
   String? selectedCategoryId;
   String? selectedCategoryChoice;
   String? selectedSubcategoryChoice;
@@ -356,12 +355,15 @@ class _TransactionDetailsCreatePageState
                   }
                 }
 
+                //Retrocedo dos veces porque son dos pantallas...
                 if (!context.mounted) return;
                 // Cerramos todos los modales y volvemos a la primera ruta (TransactionsReadPage)
-                Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).popUntil((route) => route.isFirst);
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
               }
             },
             text: "Siguiente",
@@ -424,7 +426,7 @@ class _TransactionDetailsCreatePageState
           builder: (context, myState) {
             // 3. ENVOLVER en Material: Corrige el error "No Material widget found"
             return Material(
-              color: CupertinoColors.white,
+              color: colorScheme.surface,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
@@ -432,7 +434,7 @@ class _TransactionDetailsCreatePageState
               child: SizedBox(
                 child: CupertinoPageScaffold(
                   // Fondo transparente para ver el borde redondeado del Material
-                  backgroundColor: CupertinoColors.white,
+                  backgroundColor: colorScheme.surface,
 
                   navigationBar: CupertinoNavigationBar(
                     leading: TextButton(
@@ -445,7 +447,7 @@ class _TransactionDetailsCreatePageState
                       ),
                     ),
 
-                    backgroundColor: CupertinoColors.white,
+                    backgroundColor: colorScheme.surface,
                     border: const Border(
                       bottom: BorderSide(
                         color: CupertinoColors.systemGrey5,
@@ -475,13 +477,16 @@ class _TransactionDetailsCreatePageState
                               children: [
                                 Text(
                                   category.emoji,
-                                  style: textTheme.bodyLarge,
+                                  style: textTheme.bodyLarge!.copyWith(
+                                    color: colorScheme.onSurface,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   category.nombre,
                                   style: textTheme.bodyMedium!.copyWith(
                                     fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -509,11 +514,11 @@ class _TransactionDetailsCreatePageState
 
                                   backgroundColor: isSelected
                                       ? colorScheme.primary
-                                      : colorScheme.surfaceBright,
+                                      : Colors.transparent,
                                   labelStyle: textTheme.bodySmall!.copyWith(
                                     color: isSelected
                                         ? colorScheme.onPrimary
-                                        : Colors.grey.shade800,
+                                        : colorScheme.onSurface,
                                     fontWeight: isSelected
                                         ? FontWeight.bold
                                         : FontWeight.normal,

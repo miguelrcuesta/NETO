@@ -199,14 +199,18 @@ class StandarTextField extends StatelessWidget {
         ),
         errorBorder: outlineInputBorder(
           context: context,
-
+          colorBorder: Colors.transparent,
+          borderWidth: 1,
+          radius: 10,
+        ),
+        focusedErrorBorder: outlineInputBorder(
+          context: context,
           colorBorder: Colors.transparent,
           borderWidth: 1,
           radius: 10,
         ),
         disabledBorder: outlineInputBorder(
           context: context,
-
           colorBorder: Colors.transparent,
           borderWidth: 1,
           radius: 10,

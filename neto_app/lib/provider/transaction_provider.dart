@@ -16,17 +16,18 @@ class TransactionsProvider extends ChangeNotifier {
 
   List<TransactionModel> _transactions = [];
 
-  // ⭐️ Paginación
   DocumentSnapshot? _lastDocument; // El puntero para la siguiente página
   bool _hasMore = true; // Flag para saber si hay más datos en Firestore
 
-  // ⭐️ Estados de Carga
   bool _isLoadingInitial = false; // Solo para la primera carga
   bool _isLoadingMore = false; // Para el scroll infinito
 
   // =========================================================
-  // 📥 Getters (Exposición del Estado a la UI)
+  // Getters
   // =========================================================
+
+  final int _initItemsSize = 30;
+  final int _moreItemsSize = 30;
 
   List<TransactionModel> get transactions => _transactions;
   bool get isLoadingInitial => _isLoadingInitial;
@@ -38,7 +39,7 @@ class TransactionsProvider extends ChangeNotifier {
   bool get isMultiselectActive => _transactionsSelected.isNotEmpty;
 
   //====================================================================
-  //LÓGICA DE SELECCIÓN 🔑
+  //LÓGICA DE SELECCIÓN
   //====================================================================
 
   /// Añade o elimina el ID de una transacción de la lista de seleccionados
@@ -52,7 +53,10 @@ class TransactionsProvider extends ChangeNotifier {
     } else {
       _transactionsSelected.add(id);
     }
-    notifyListeners(); //  Notifica el cambio de selección
+    notifyListeners();
+    debugPrint(
+      _transactionsSelected.toString(),
+    ); //  Notifica el cambio de selección
   }
 
   /// Limpia la lista de seleccionados y desactiva el modo multiselección.
@@ -76,7 +80,10 @@ class TransactionsProvider extends ChangeNotifier {
     notifyListeners();
 
     // Llama a la lógica de paginación con un lastDocument nulo
-    await _fetchAndAppendTransactions(startAfterDocument: null);
+    await _fetchAndAppendTransactions(
+      startAfterDocument: null,
+      limit: _initItemsSize,
+    );
 
     _isLoadingInitial = false;
     notifyListeners();
@@ -84,6 +91,7 @@ class TransactionsProvider extends ChangeNotifier {
 
   /// 2. Carga la siguiente página de transacciones.
   Future<void> loadMoreTransactions() async {
+    debugPrint("Llamando al provider: loadMoreTransactions");
     // Restricciones para evitar llamadas innecesarias o duplicadas
     if (!_hasMore || _isLoadingMore || _lastDocument == null) return;
 
@@ -91,7 +99,10 @@ class TransactionsProvider extends ChangeNotifier {
     notifyListeners();
 
     // Llama a la lógica de paginación usando el último puntero
-    await _fetchAndAppendTransactions(startAfterDocument: _lastDocument);
+    await _fetchAndAppendTransactions(
+      startAfterDocument: _lastDocument,
+      limit: _moreItemsSize,
+    );
 
     _isLoadingMore = false;
     notifyListeners();
@@ -100,10 +111,12 @@ class TransactionsProvider extends ChangeNotifier {
   /// Función privada genérica para manejar la consulta y la actualización del estado.
   Future<void> _fetchAndAppendTransactions({
     DocumentSnapshot? startAfterDocument,
+    int? limit,
   }) async {
     try {
       final result = await _controller.getTransactionsPaginated(
         startAfterDocument: startAfterDocument,
+        limit: limit,
       );
 
       if (result.data.isNotEmpty && startAfterDocument == null) {

@@ -11,18 +11,20 @@ def get_category_gemini_prompt(description: str,locale: str) -> str:
     CATEGORÍAS Y SUBCATEGORÍAS VÁLIDAS:
     Debes elegir las claves 'idcategoria','categoria' y 'subcategoria' de la siguiente lista:
 
-    **A. CATEGORÍAS DE GASTOS**
+    A. CATEGORÍAS DE GASTOS
 
-      | ID | Nombre de Categoría | Subcategorías |
-      |:---:|:---|:---|
-      | VIVIENDA | Vivienda y Hogar | Alquiler, Hipoteca, Servicios (Luz, Agua, Gas), Internet y Telefonía, Reparaciones y Mantenimiento, Muebles y Decoración |
-      | ALIMENTACION | Alimentación | Supermercado (Compras), Restaurantes (comer fuera), Comida Rápida, Cafeterías y Bares |
-      | TRANSPORTE | Transporte | Combustible/Gasolina, Transporte Público, Taxi/VTC, Mantenimiento de Vehículo, Peajes y Parking |
-      | SUSCRIPCIONES | Suscripciones y Cuotas | Netflix, Amazon Prime, Amazon Music, Apple TV, Apple iCloud, Apple Music, Disney+, Youtube Premium, HBO, Movistar, Plataforma Streaming, Gimnasio/Deportes, Software/Apps, Cursos de Formación, Cuotas bancarias |
-      | SALUD | Salud y Cuidado | Médico y Dentista, Farmacia y Medicamentos, Seguro de Salud, Cuidado Personal (Peluquería, cosmética) |
-      | OCIO | Ocio y Diversión | Cine/Teatro/Conciertos, Viajes y Vacaciones, Hobbies, Compras de Electrónica, Salidas nocturnas |
-      | ROPA | Ropa y Accesorios | Ropa, Calzado, Accesorios, Lavandería/Tintorería |
-      | OTROS | Otros | Pago de Préstamos/Tarjetas, Regalos, Mascotas (Comida, Veterinario), Donaciones, Multas, Retiro de efectivo |
+        | ID | Nombre de Categoría | Subcategorías |
+        |:---:|:---|:---|
+        | VIVIENDA | Vivienda y Hogar | Alquiler, Hipoteca, Comunidad/Vecinos, Seguro de Vivienda, Derramas, Electricidad, Agua, Gas/Calefacción, Internet y Telefonía, Tasa de Basura/Reciclaje, Impuestos de Propiedad (IBI), Reparaciones y Mantenimiento, Mobiliario y Decoración, Electrodomésticos, Productos de Limpieza. |
+        | ALIMENTACION | Alimentación | Supermercados, Restaurantes, Comida Rápida, Cafeterías y Bares. |
+        | TRANSPORTE | Transporte | Combustible/Gasolina, Transporte Público, Taxi/VTC, Mantenimiento de Vehículo, Peajes y Parking. |
+        | EDUCACION | Educación y Formación | Guardería, Colegio, Universidad (Grado), Universidad (Master), Academia, Clases Particulares. |
+        | SUSCRIPCIONES | Suscripciones y Cuotas | Netflix, Amazon Prime, Amazon Music, Apple TV, Apple iCloud, Apple Music, Disney+, Youtube Premium, HBO, Movistar, Plataforma Streaming, Gimnasio/Deportes, Software/Apps, Cursos de Formación, Cuotas bancarias. |
+        | SALUD | Salud y Cuidado | Médico y Dentista, Farmacia y Medicamentos, Seguro de Salud, Cuidado Personal (Peluquería, cosmética). |
+        | OCIO | Ocio y Diversión | Teatro, Cine, Conciertos, Viajes, Hobbies, Compras de Electrónica, Salidas nocturnas. |
+        | ROPA | Ropa y Accesorios | Ropa, Calzado, Accesorios, Costura, Lavandería/Tintorería. |
+        | TECNOLOGIA | Tecnología y Electrónica | Teléfonos y Smartphones, Ordenadores y Laptops, Tablets y E-readers, Televisores y Audio/Vídeo (Cine en Casa), Consolas y Videojuegos (Hardware), Accesorios y Periféricos, Dispositivos Vestibles (Smartwatch, Pulseras), Cámaras y Equipos de Fotografía, Reparación de Dispositivos, Garantías y Seguros de Electrónica, Componentes (Hardware, Tarjetas Gráficas, RAM). |
+        | OTROS | Otros | 'Otros',Pago de Préstamos/Tarjetas, Regalos, Mascotas (Comida, Veterinario), Donaciones, Multas, Retiro de efectivo. |
 
    **B. CATEGORÍAS DE INGRESOS**
 
@@ -31,7 +33,7 @@ def get_category_gemini_prompt(description: str,locale: str) -> str:
       | SALARIO | Salario | Nómina Principal, Horas Extra, Bonificaciones, Ingresos Freelance |
       | INVERSIONES | Inversiones | Dividendos, Intereses Bancarios, Alquiler de Propiedades, Venta de Activos, Acciones |
       | VENTAS | Ventas/Negocio | Venta de Artículos Personales, Ingresos de Negocio Propio, Comisiones, Devoluciones |
-      | OTROS | Otros Ingresos | Regalos Recibidos, Devolución de Impuestos, Reembolsos, Bizum, Ingresos Varios/Extraordinarios |
+      | OTROS | Otros Ingresos | 'Otros', Regalos Recibidos, Devolución de Impuestos, Reembolsos, Bizum, Ingresos Varios/Extraordinarios |
 
       ---
     
