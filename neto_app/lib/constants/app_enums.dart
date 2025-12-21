@@ -537,6 +537,16 @@ class Currency {
         .map((jsonMap) => Currency.fromJson(jsonMap as Map<String, dynamic>))
         .toList();
   }
+
+  static Currency? findByCode(String code) {
+    try {
+      return availableCurrencies.firstWhere(
+        (c) => c.code.toUpperCase() == code.toUpperCase(),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 enum UpdateDirection { add, delete, none }

@@ -36,30 +36,34 @@ class TransactionController {
   // =========================================================
 
   /// Carga la siguiente página de transacciones y actualiza el Stream.
+  /// Carga la siguiente página de transacciones con soporte para filtros de Año y Mes.
   Future<PaginatedTransactionResult> getTransactionsPaginated({
     String? type,
     DocumentSnapshot? startAfterDocument,
     int? limit,
+    int? year,
+    int? month,
   }) async {
     try {
-      debugPrint("Llamando al controller: getTransactionsPaginated");
-      // 1. Crear la consulta con el servicio
+      debugPrint(
+        "Llamando al controller: getTransactionsPaginated (Filtros: Year $year, Month $month)",
+      );
+
       final Query query = _transactionService.getTransactions(
         pageSize: limit ?? _pageSize,
         type: type,
         userId: _currentUserId,
+        year: year,
+        month: month,
       );
 
-      // 2. Agregar el punto de inicio (paginación)
       Query finalQuery = query;
       if (startAfterDocument != null) {
         finalQuery = query.startAfterDocument(startAfterDocument);
       }
 
-      // 3. Ejecutar la consulta en la base de datos
       final QuerySnapshot snapshot = await finalQuery.get();
 
-      // 4. Mapear los datos
       final List<TransactionModel> transactions = snapshot.docs.map((doc) {
         return TransactionModel.fromMap(
           doc.data() as Map<String, dynamic>,
@@ -67,7 +71,6 @@ class TransactionController {
         );
       }).toList();
 
-      // 5. Determinar el último documento para la próxima página
       final DocumentSnapshot? lastDocument = snapshot.docs.isNotEmpty
           ? snapshot.docs.last
           : null;

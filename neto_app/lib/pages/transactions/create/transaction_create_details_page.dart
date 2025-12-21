@@ -146,10 +146,8 @@ class _TransactionDetailsCreatePageState
     if (descripcion.isNotEmpty) {
       if (isLoading) return;
 
-      setState(() {
-        isLoading = true;
-        sugerenciaGemini = null;
-      });
+      isLoading = true;
+      sugerenciaGemini = null;
 
       await fetchNewIACategory(descripcion);
     }
@@ -222,82 +220,84 @@ class _TransactionDetailsCreatePageState
       resizeToAvoidBottomInset: false,
       backgroundColor: colorScheme.surface,
       //appBar: AppBar(),
-      body: SafeArea(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: AppDimensions.spacingLarge),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 20.0),
-                      decoration: decorationContainer(
-                        context: context,
-                        colorFilled: colorScheme.primaryContainer,
-                        radius: 10,
+      body: SingleChildScrollView(
+        child: SafeArea(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: AppDimensions.spacingLarge),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        decoration: decorationContainer(
+                          context: context,
+                          colorFilled: colorScheme.primaryContainer,
+                          radius: 10,
+                        ),
+                        child: _widgetdescription(textTheme, colorScheme),
                       ),
-                      child: _widgetdescription(textTheme, colorScheme),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 15.0,
-                        vertical: 15.0,
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 15.0,
+                          vertical: 15.0,
+                        ),
+                        decoration: decorationContainer(
+                          context: context,
+                          colorFilled: colorScheme.primaryContainer,
+                          radius: 10,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _widgetType(textTheme, colorScheme, myTabs),
+                            Divider(
+                              color: colorScheme.outline,
+                              thickness: 0.80,
+                              height: 30,
+                            ),
+                            _widgetDate(textTheme, colorScheme, context),
+                            Divider(
+                              color: colorScheme.outline,
+                              thickness: 0.80,
+                              height: 30,
+                            ),
+                            _geminiCategory(textTheme, colorScheme),
+                          ],
+                        ),
                       ),
-                      decoration: decorationContainer(
-                        context: context,
-                        colorFilled: colorScheme.primaryContainer,
-                        radius: 10,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _widgetType(textTheme, colorScheme, myTabs),
-                          Divider(
-                            color: colorScheme.outline,
-                            thickness: 0.80,
-                            height: 30,
-                          ),
-                          _widgetDate(textTheme, colorScheme, context),
-                          Divider(
-                            color: colorScheme.outline,
-                            thickness: 0.80,
-                            height: 30,
-                          ),
-                          _geminiCategory(textTheme, colorScheme),
-                        ],
-                      ),
-                    ),
 
-                    // const SizedBox(height: 20),
+                      // const SizedBox(height: 20),
 
-                    // Container(
-                    //   width: double.infinity,
-                    //   padding: EdgeInsets.symmetric(
-                    //     horizontal: 20.0,
-                    //     vertical: 20.0,
-                    //   ),
-                    //   decoration: decorationContainer(
-                    //     context: context,
-                    //     colorFilled: colorScheme.primaryContainer,
-                    //     radius: 10,
-                    //   ),
-                    //   child: _geminiCategory(textTheme, colorScheme),
-                    // ),
-                  ],
-                ),
-              ],
+                      // Container(
+                      //   width: double.infinity,
+                      //   padding: EdgeInsets.symmetric(
+                      //     horizontal: 20.0,
+                      //     vertical: 20.0,
+                      //   ),
+                      //   decoration: decorationContainer(
+                      //     context: context,
+                      //     colorFilled: colorScheme.primaryContainer,
+                      //     radius: 10,
+                      //   ),
+                      //   child: _geminiCategory(textTheme, colorScheme),
+                      // ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

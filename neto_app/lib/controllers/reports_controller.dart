@@ -57,7 +57,6 @@ class ReportsController {
   Future<PaginatedReportResult> getReportsPaginated({
     DocumentSnapshot? lastDocument,
     int pageSize = 10,
-    // Puedes añadir más filtros aquí si los necesitas (ej. startDate, endDate)
   }) async {
     debugPrint('getReportsPaginated');
     try {

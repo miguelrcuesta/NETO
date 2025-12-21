@@ -40,6 +40,7 @@ class AppEmptyStates extends StatelessWidget {
               spacing: 10,
               children: [
                 Text(
+                  textAlign: TextAlign.center,
                   upText,
                   style: textTheme.titleMedium!.copyWith(
                     color: colorScheme.onSurface,

@@ -89,16 +89,7 @@ def get_networth_resume_gemini_prompt(asset_data_json: str,user_question: str,lo
         #### 4. Identificación de Mayor Crecimiento
         * **Máximo Crecimiento:** Identifica el activo individual que ha tenido el mayor crecimiento porcentual (retorno total) desde su fecha de creación o su primer registro histórico.
 
-        #### 5. Análisis Comparativo de Inversiones (si aplica)
-        Si existen activos con 'type' = 'investment', realiza este análisis:
-        * **Crecimiento Propio:** Calcula el crecimiento porcentual total de la cartera de inversiones del usuario desde el inicio del registro.
-        * **Comparativa de Benchmark:** **Utilizando datos de referencia del mercado hasta el día de hoy**, compara el crecimiento de la cartera de inversiones del usuario contra el crecimiento que habrían tenido los mismos balances invertidos en el mismo periodo en los siguientes índices o acciones principales:
-        * NASDAQ Composite Index
-        * IBEX 35
-        * S&P 500 Index
-        * Acciones de Alto Rendimiento (ej. Apple, Microsoft, Amazon o las más importantes por capitalización global).
-
-         #### Si el usuario te pregunta algo '{user_question}', empieza por lo que pregunta el usuario y luego complementa diciendo, te voy a dar más información que es muy interesante:
+        #### Si el usuario te pregunta algo '{user_question}', empieza por lo que pregunta el usuario y luego complementa diciendo, te voy a dar más información que es muy interesante:
 
         ### Formato de Salida
         La respuesta debe estar estructurada usando **bullets y encabezados claros (Markdown)** para garantizar una fácil y rápida lectura.

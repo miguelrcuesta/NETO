@@ -23,55 +23,69 @@ class TransactionService {
     String? frequency,
     DateTime? startDate,
     DateTime? endDate,
+    int? year, // 🆕 Filtro directo por campo 'year'
+    int? month, // 🆕 Filtro directo por campo 'month'
     double? minAmount,
     double? maxAmount,
     DocumentSnapshot? lastDocument,
-    required int pageSize, // Recibe el límite de la página
+    required int pageSize,
   }) {
     // 1. Iniciar la consulta
     Query query = _transactionsRef;
 
-    // 2. Aplicar condiciones 'where' (Filtros)
-    if (type != null && type.isNotEmpty) {
-      query = query.where('type', isEqualTo: type);
-    }
-    //userId != null && userId.isNotEmpty
+    // 2. Aplicar filtros de igualdad (Directos)
     if (userId != null && userId.isNotEmpty) {
       query = query.where('userId', isEqualTo: userId);
+    }
+
+    // FILTROS DE AÑO Y MES (Directos a campos de la BBDD)
+    if (year != null) {
+      query = query.where('year', isEqualTo: year);
+    }
+    if (month != null) {
+      query = query.where('month', isEqualTo: month);
+    }
+
+    if (type != null && type.isNotEmpty) {
+      query = query.where('type', isEqualTo: type);
     }
     if (categoryId != null && categoryId.isNotEmpty) {
       query = query.where('categoryid', isEqualTo: categoryId);
     }
-    // ... aplicar otros filtros (currency, frequency, amount, date ranges)
     if (currency != null && currency.isNotEmpty) {
       query = query.where('currency', isEqualTo: currency);
     }
     if (frequency != null && frequency.isNotEmpty) {
       query = query.where('frequency', isEqualTo: frequency);
     }
+
+    // 3. Otros filtros (Rangos si son necesarios)
     if (minAmount != null && minAmount > 0) {
       query = query.where('amount', isGreaterThanOrEqualTo: minAmount);
     }
     if (maxAmount != null && maxAmount > 0) {
       query = query.where('amount', isLessThanOrEqualTo: maxAmount);
     }
-    if (startDate != null) {
+
+    // Filtros de fecha adicionales (solo si no se usa year/month o como filtro extra)
+    if (startDate != null && year == null) {
       query = query.where('date', isGreaterThanOrEqualTo: startDate);
     }
-    if (endDate != null) {
+    if (endDate != null && year == null) {
       final adjustedEndDate = endDate.add(const Duration(days: 1));
       query = query.where('date', isLessThan: adjustedEndDate);
     }
 
-    // 3. Aplicar ordenación (CRUCIAL para la paginación)
+    // 4. Aplicar ordenación
+    // NOTA: Si usas filtros de igualdad (==), puedes ordenar por 'date' sin problema.
     query = query.orderBy('date', descending: true);
 
-    // 4. Aplicar paginación (Cursor)
+    // 5. Aplicar paginación (Cursor)
     if (lastDocument != null) {
       query = query.startAfterDocument(lastDocument);
     }
 
-    // 5. Aplicar límite de página
+    // 6. Aplicar límite de página
     query = query.limit(pageSize);
 
     return query;

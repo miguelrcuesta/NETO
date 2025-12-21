@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Necesario para DocumentSnapshot
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:neto_app/controllers/transaction_controller.dart';
 import 'package:neto_app/models/transaction_model.dart';
-// Importa tus utilidades de Snackbar si es necesario, aunque el Provider se enfoca en el estado.
 
 class TransactionsProvider extends ChangeNotifier {
-  // 1.Inyección de dependencia (Tu Controller)
   final TransactionController _controller;
 
   TransactionsProvider() : _controller = TransactionController();
@@ -15,12 +13,14 @@ class TransactionsProvider extends ChangeNotifier {
   // =========================================================
 
   List<TransactionModel> _transactions = [];
+  DocumentSnapshot? _lastDocument;
+  bool _hasMore = true;
+  bool _isLoadingInitial = false;
+  bool _isLoadingMore = false;
 
-  DocumentSnapshot? _lastDocument; // El puntero para la siguiente página
-  bool _hasMore = true; // Flag para saber si hay más datos en Firestore
-
-  bool _isLoadingInitial = false; // Solo para la primera carga
-  bool _isLoadingMore = false; // Para el scroll infinito
+  // Estado de filtros actuales para mantener consistencia en paginación
+  int? _currentYear;
+  int? _currentMonth;
 
   // =========================================================
   // Getters
@@ -39,11 +39,9 @@ class TransactionsProvider extends ChangeNotifier {
   bool get isMultiselectActive => _transactionsSelected.isNotEmpty;
 
   //====================================================================
-  //LÓGICA DE SELECCIÓN
+  // LÓGICA DE SELECCIÓN
   //====================================================================
 
-  /// Añade o elimina el ID de una transacción de la lista de seleccionados
-  /// y notifica a los listeners (AppBar, TransactionCard).
   void toggleTransactionSelection(TransactionModel transaction) {
     if (transaction.transactionId == null) return;
 
@@ -54,32 +52,29 @@ class TransactionsProvider extends ChangeNotifier {
       _transactionsSelected.add(id);
     }
     notifyListeners();
-    debugPrint(
-      _transactionsSelected.toString(),
-    ); //  Notifica el cambio de selección
   }
 
-  /// Limpia la lista de seleccionados y desactiva el modo multiselección.
   void clearSelection() {
     _transactionsSelected.clear();
-    notifyListeners(); // 📢 Notifica para forzar el cambio del AppBar
+    notifyListeners();
   }
 
   // =========================================================
-  // FIREBASE
+  // FIREBASE Y FILTROS
   // =========================================================
 
-  /// 1. Carga el primer lote de transacciones.
+  /// Carga inicial sin filtros específicos (resetea filtros actuales)
   Future<void> loadInitialTransactions() async {
-    debugPrint("Llamando al provider: loadInitialTransactions");
-    // Evita recargar si ya hay datos y no se necesita refresh
-    // if (_transactions.isNotEmpty || _isLoadingInitial) return;
     if (_isLoadingInitial) return;
+
+    _currentYear = null;
+    _currentMonth = null;
+    _lastDocument = null;
+    _hasMore = true;
 
     _isLoadingInitial = true;
     notifyListeners();
 
-    // Llama a la lógica de paginación con un lastDocument nulo
     await _fetchAndAppendTransactions(
       startAfterDocument: null,
       limit: _initItemsSize,
@@ -89,16 +84,33 @@ class TransactionsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 2. Carga la siguiente página de transacciones.
+  /// Función para cargar transacciones aplicando filtros de año y mes
+  Future<void> loadTransactionsByFilter({int? year, int? month}) async {
+    _currentYear = year;
+    _currentMonth = month;
+    _lastDocument = null;
+    _hasMore = true;
+    _transactions = []; // Limpiamos la lista para mostrar los nuevos resultados
+
+    _isLoadingInitial = true;
+    notifyListeners();
+
+    await _fetchAndAppendTransactions(
+      startAfterDocument: null,
+      limit: _initItemsSize,
+    );
+
+    _isLoadingInitial = false;
+    notifyListeners();
+  }
+
+  /// Carga la siguiente página respetando los filtros actuales
   Future<void> loadMoreTransactions() async {
-    debugPrint("Llamando al provider: loadMoreTransactions");
-    // Restricciones para evitar llamadas innecesarias o duplicadas
     if (!_hasMore || _isLoadingMore || _lastDocument == null) return;
 
     _isLoadingMore = true;
     notifyListeners();
 
-    // Llama a la lógica de paginación usando el último puntero
     await _fetchAndAppendTransactions(
       startAfterDocument: _lastDocument,
       limit: _moreItemsSize,
@@ -108,7 +120,7 @@ class TransactionsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Función privada genérica para manejar la consulta y la actualización del estado.
+  /// Función privada genérica que conecta con el Controller
   Future<void> _fetchAndAppendTransactions({
     DocumentSnapshot? startAfterDocument,
     int? limit,
@@ -117,59 +129,50 @@ class TransactionsProvider extends ChangeNotifier {
       final result = await _controller.getTransactionsPaginated(
         startAfterDocument: startAfterDocument,
         limit: limit,
+        year: _currentYear,
+        month: _currentMonth,
       );
 
-      if (result.data.isNotEmpty && startAfterDocument == null) {
-        // Carga inicial: reemplaza toda la lista
+      if (startAfterDocument == null) {
         _transactions = result.data;
-      } else if (result.data.isNotEmpty && startAfterDocument != null) {
-        // Paginación: agrega a la lista existente
+      } else {
         _transactions.addAll(result.data);
       }
 
-      // Actualiza el puntero de paginación
       _lastDocument = result.lastDocument;
       _hasMore = result.lastDocument != null;
     } catch (e) {
-      debugPrint("Error al obtener transacciones paginadas: $e");
-      // Opcional: manejar si _hasMore debe ser false en caso de error
+      debugPrint("Error al obtener transacciones: $e");
     }
   }
 
   // =========================================================
-  // PROVIDER FUNCIONES
+  // OPERACIONES CRUD
   // =========================================================
 
-  /// Crea y añade una nueva transacción.
   Future<void> addTransaction({
     required BuildContext context,
     required TransactionModel newTransaction,
   }) async {
-    // 1. Persistir el dato (Controller maneja el SnackBar de éxito/error)
     await _controller.createNewTransaction(
       context: context,
       newTransaction: newTransaction,
     );
 
-    // 2. Actualizar la lista en memoria (Se asume que la transacción fue exitosa)
-    // Se añade al principio para que sea visible inmediatamente.
     _transactions.insert(0, newTransaction);
     _transactions.sort((a, b) => b.date!.compareTo(a.date!));
     notifyListeners();
   }
 
-  /// Edita una transacción sin recargar la lista completa.
   Future<void> updateTransaction({
     required BuildContext context,
     required TransactionModel updatedTransaction,
   }) async {
-    // 1. Persistir el cambio (Controller maneja el SnackBar)
     await _controller.updateTransaction(
       context: context,
       newTransaction: updatedTransaction,
     );
 
-    // 2. Reemplazar el objeto en memoria
     final index = _transactions.indexWhere(
       (t) => t.transactionId == updatedTransaction.transactionId,
     );
@@ -179,20 +182,15 @@ class TransactionsProvider extends ChangeNotifier {
     }
   }
 
-  /// Elimina una transacción.
   Future<void> deleteTransaction({
     required BuildContext context,
     required String id,
   }) async {
-    // 1. Eliminar del backend (Controller maneja el SnackBar)
     await _controller.deleteTransaction(context: context, id: id);
-
-    // 2. Eliminar de la lista en memoria
     _transactions.removeWhere((t) => t.transactionId == id);
     notifyListeners();
   }
 
-  /// Elimina una transacciones
   Future<void> deleteSelectedTransactionsAndUpdate({
     required BuildContext context,
     required TransactionController controller,
@@ -201,25 +199,18 @@ class TransactionsProvider extends ChangeNotifier {
 
     final List<String> idsToDelete = _transactionsSelected.toList();
 
-    // 1. Llamar al Controller para ejecutar el borrado en la API
     final success = await _controller.deletemultipleTransactions(
       context: context,
       idsToDelete: idsToDelete,
     );
 
     if (success) {
-      // 2. Si la API tuvo éxito, actualiza la lista local:
-      // Remueve de _transactions todos los elementos cuyo ID esté en _transactionsSelected.
       _transactions.removeWhere(
         (t) =>
             t.transactionId != null &&
             _transactionsSelected.contains(t.transactionId),
       );
-
-      // 3. Limpiar la selección
       _transactionsSelected.clear();
-
-      // 4. Notificar a la UI (ListView y AppBar)
       notifyListeners();
     }
   }

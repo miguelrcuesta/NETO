@@ -193,7 +193,6 @@ class _PinCodeWidgetState extends State<PinCodeWidget> {
 class TransactionKeyBoardWidget extends StatefulWidget {
   final String initialAmount;
 
-  // 🔑 CORRECCIÓN: El callback ahora debe usar AmountUpdate, no String.
   final ValueChanged<AmountUpdate> onAmountChange;
 
   const TransactionKeyBoardWidget({
@@ -227,7 +226,7 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
     }
   }
 
-  // 🔑 FUNCIÓN FALTANTE: Lógica para el estado del decimal "fantasma"
+  //FUNCIÓN FALTANTE: Lógica para el estado del decimal "fantasma"
   void _checkPhantomState(String currentAmount) {
     if (!currentAmount.contains('.')) {
       phantomDecimal = '';
@@ -244,14 +243,14 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
     }
   }
 
-  /// 🔑 CORRECCIÓN: ÚNICA FUNCIÓN para actualizar el estado y notificar al padre
+  ///CORRECCIÓN: ÚNICA FUNCIÓN para actualizar el estado y notificar al padre
   void _updateAndNotify(String newAmount, UpdateDirection direction) {
     setState(() {
       amount = newAmount;
       _checkPhantomState(newAmount);
     });
 
-    // 🔑 Notificar al padre usando el objeto AmountUpdate
+    //Notificar al padre usando el objeto AmountUpdate
     widget.onAmountChange(AmountUpdate(newAmount, direction));
   }
 
@@ -277,54 +276,55 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
   Widget _buildNumberKey(int number) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     final String numberString = number.toString();
-
-    // Asumo que el límite máximo es 10 caracteres (incluyendo punto)
     const int maxAmountLength = 10;
 
     return _buildKey(
       onPressed: () {
         String newAmount = amount;
 
-        // 1. Lógica de restricción de decimales y fantasmas (debe ir primero)
-        final realDecimalPart = amount.contains('.')
-            ? amount.split('.').last
-            : '';
-        final bool isMaxDecimal =
-            realDecimalPart.length >= 2 && phantomDecimal.isEmpty;
-
-        // 2. Si ya se alcanzó el límite de caracteres Y no estamos en fase fantasma, NO CONTINUAR.
-        // Esto evita que el estado del teclado se actualice si ya no caben más números.
-        if (amount.length >= maxAmountLength && !amount.contains('.')) {
-          // Si el monto es "1111111111" (10 caracteres sin punto), no añadir más.
+        // 1. Lógica para evitar el cero a la izquierda (Si es "0", reemplazamos por el número)
+        if (amount == '0') {
+          newAmount = numberString;
+          _updateAndNotify(newAmount, UpdateDirection.add);
           return;
         }
 
-        if (isMaxDecimal) return; // Ya tiene 2 decimales reales
+        // 2. Lógica de restricción de decimales
+        final realDecimalPart = amount.contains('.')
+            ? amount.split('.').last
+            : '';
+
+        // Si ya tiene 2 decimales y NO hay espacio fantasma para escribir, bloqueamos
+        if (amount.contains('.') &&
+            realDecimalPart.length >= 2 &&
+            phantomDecimal.isEmpty) {
+          return;
+        }
 
         // 3. Generar la nueva cadena (newAmount)
         if (amount.contains('.') && phantomDecimal.isNotEmpty) {
-          // Lógica Fantasma: Reemplazar el fantasma al escribir
+          // Lógica Fantasma: Reemplazamos los "0" o "00" por el número pulsado
           final parts = amount.split('.');
           final realDecimal = parts.length > 1 ? parts[1] : '';
 
           if (phantomDecimal == '00') {
-            newAmount = parts[0] + '.' + numberString;
+            // Si era "50." -> pasa a "50.X" (el primer cero desaparece)
+            newAmount = '${parts[0]}.$numberString';
           } else if (phantomDecimal == '0') {
-            newAmount = parts[0] + '.' + realDecimal + numberString;
+            // Si era "50.1" -> pasa a "50.1X"
+            newAmount = '${parts[0]}.$realDecimal$numberString';
           }
         } else {
-          // Lógica Normal: Añadir el dígito
+          // Lógica Normal: Añadir el dígito al final
           newAmount = amount + numberString;
         }
 
-        // 4. Comprobar el límite FINAL antes de notificar/actualizar (Protección doble)
+        // 4. Validaciones de seguridad de longitud
         if (newAmount.length > maxAmountLength && !newAmount.contains('.')) {
-          // Si después de añadir el nuevo dígito, supera el límite de 10 y no hay punto,
-          // IGNORAR LA PULSACIÓN.
           return;
         }
 
-        // 5. Solo si el monto realmente cambia y es válido, actualizamos y notificamos
+        // 5. Notificar si hubo cambio
         if (newAmount != amount) {
           _updateAndNotify(newAmount, UpdateDirection.add);
         }
@@ -356,7 +356,7 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
               } else {
                 newAmount = amount + coma;
               }
-              // 🔑 Notificación de AÑADIR
+              //Notificación de AÑADIR
               _updateAndNotify(newAmount, UpdateDirection.add);
             },
       child: Text(
@@ -410,7 +410,7 @@ class _TransactionKeyBoardWidgetState extends State<TransactionKeyBoardWidget> {
                     if (amount.isNotEmpty) {
                       newAmount = amount.substring(0, amount.length - 1);
                       direction =
-                          UpdateDirection.delete; // 🔑 Notificación de BORRADO
+                          UpdateDirection.delete; //Notificación de BORRADO
                     }
 
                     _updateAndNotify(newAmount, direction);
@@ -504,7 +504,7 @@ class AmountDisplayWidget extends StatelessWidget {
             ),
           ),
           // .animate(
-          //   // 🔑 DISPARADOR DE LA ANIMACIÓN:
+          //   //DISPARADOR DE LA ANIMACIÓN:
           //   // Usamos la longitud de la cadena para que se dispare solo cuando se añade un dígito.
           //   key: ValueKey(realDisplayAmount.length),
           // )
@@ -766,6 +766,84 @@ class _TransactionCardSmallState extends State<TransactionCardSmall> {
   }
 }
 
+class CategoryCard extends StatefulWidget {
+  const CategoryCard({
+    super.key,
+    required this.idCategory,
+    required this.type,
+    required this.title,
+    required this.amount,
+  });
+
+  final String idCategory;
+  final String type;
+  final String? title;
+
+  final String amount;
+
+  @override
+  State<CategoryCard> createState() => _CategoryCardState();
+}
+
+class _CategoryCardState extends State<CategoryCard> {
+  dynamic getCategory(String id) {
+    if (widget.type == TransactionType.expense.id) {
+      return Expenses.getCategoryById(id);
+    } else {
+      return Incomes.getCategoryById(id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
+
+    dynamic category = getCategory(widget.idCategory);
+
+    return Container(
+      decoration: decorationContainer(
+        context: context,
+        radius: 10,
+        borderWidth: 1,
+        colorFilled: colorScheme.primaryContainer,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: ListTile(
+        minVerticalPadding: 0,
+        contentPadding: EdgeInsets.zero,
+        leading: ClipRRect(
+          child: Container(
+            width: 45,
+            height: 45,
+            decoration: decorationContainer(
+              context: context,
+              colorFilled:
+                  category.color.withAlpha(30) ??
+                  colorScheme.primary.withAlpha(30),
+              radius: 100,
+            ),
+            child: Icon(
+              category.iconData,
+              size: 20,
+              color: category.color ?? colorScheme.primary,
+            ),
+          ),
+        ),
+
+        title: Text(
+          widget.title != null
+              ? widget.title!.toUpperCase()
+              : category.nombre.toUpperCase(),
+          style: textTheme.bodySmall!.copyWith(color: colorScheme.onSurface),
+        ),
+
+        trailing: Text(widget.amount, style: textTheme.titleSmall),
+      ),
+    );
+  }
+}
+
 //======================================================================
 //REPORT CARDS
 //======================================================================
@@ -998,40 +1076,40 @@ class NetworthTypeCardResumeSliver extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row(
-          //   spacing: 10,
-          //   mainAxisAlignment: MainAxisAlignment.start,
-          //   crossAxisAlignment: CrossAxisAlignment.start,
-          //   children: [
-          //     ClipOval(
-          //       //borderRadius: BorderRadiusGeometry.all(Radius.circular(100)),
-          //       child: Container(
-          //         color: assetType.backgroundColor,
-          //         width: 40,
-          //         height: 40,
-          //         child: Icon(
-          //           assetType.iconData,
-          //           size: 20,
-          //           color: Colors.white,
-          //         ),
-          //       ),
-          //     ),
-          //     Column(
-          //       mainAxisAlignment: MainAxisAlignment.start,
-          //       crossAxisAlignment: CrossAxisAlignment.start,
-          //       children: [
-          //         Text(titleCard, style: textTheme.titleSmall),
-          //         Text(
-          //           subtitleCard,
-          //           style: textTheme.bodySmall!.copyWith(
-          //             color: colorScheme.onSurfaceVariant,
-          //             fontSize: 12,
-          //           ),
-          //         ),
-          //       ],
-          //     ),
-          //   ],
-          // ),
+          Row(
+            spacing: 10,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipOval(
+                //borderRadius: BorderRadiusGeometry.all(Radius.circular(100)),
+                child: Container(
+                  color: assetType.backgroundColor,
+                  width: 40,
+                  height: 40,
+                  child: Icon(
+                    assetType.iconData,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titleCard, style: textTheme.titleSmall),
+                  Text(
+                    subtitleCard,
+                    style: textTheme.bodySmall!.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,

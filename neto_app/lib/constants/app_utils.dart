@@ -121,173 +121,6 @@ class AppFormatters {
   //###################################################################################
   //###################################################################################
 
-  // ----------------------------------------------------
-  // A. FORMATOS DE MONEDA
-  // ----------------------------------------------------
-
-  // Formato para EURO (€) - Convención ES (punto miles, coma decimal)
-  static final NumberFormat euroCurrency = NumberFormat.currency(
-    locale: 'es_ES',
-    symbol: '€',
-    decimalDigits: 2,
-  );
-
-  // Formato para DÓLAR ($) - Convención US (coma miles, punto decimal)
-  static final NumberFormat usdCurrency = NumberFormat.currency(
-    locale: 'en_US',
-    symbol: '\$',
-    decimalDigits: 2,
-  );
-  static final NumberFormat poundCurrency = NumberFormat.currency(
-    locale: 'en_GB',
-    symbol: '£',
-    decimalDigits: 2,
-  );
-
-  // ----------------------------------------------------
-  // B. FORMATOS DE NÚMERO (SIN SÍMBOLO DE MONEDA)
-  // ----------------------------------------------------
-
-  // Formato de miles simple con convención española (1.234.567,89)
-  static final numberFormatterES = NumberFormat.decimalPattern('es_ES');
-
-  // Formato de miles simple con convención americana (1,234,567.89)
-  static final numberFormatterUS = NumberFormat.currency(
-    locale: 'en_US',
-    decimalDigits: 2,
-  );
-
-  // Formato para porcentajes
-  static final percentage = NumberFormat.percentPattern();
-
-  String formatNumberES(String text) {
-    // 1. Limpiar: Eliminar todo excepto dígitos, comas y puntos.
-    String cleanedText = text.replaceAll(RegExp(r'[^\d,.]'), '');
-
-    // 2. Normalizar: Reemplazar la coma decimal por el punto decimal
-    // para que Dart pueda parsearlo (esto es crucial).
-    cleanedText = cleanedText.replaceAll(',', '.');
-
-    // 3. Parsear a número
-    double? number = double.tryParse(cleanedText);
-
-    if (number == null) {
-      return text; // Devolver el texto original si no es válido
-    }
-
-    // 4. Formatear y devolver
-    return numberFormatterES.format(number).trim();
-  }
-
-  String formatNumberUS(String text) {
-    // 1. Limpiar: Eliminar todo excepto dígitos, comas y puntos.
-    String cleanedText = text.replaceAll(RegExp(r'[^\d,.]'), '');
-
-    // 2. Normalizar: Reemplazar la coma decimal por el punto decimal
-    // para que Dart pueda parsearlo (esto es crucial).
-    cleanedText = cleanedText.replaceAll(',', '.');
-
-    // 3. Parsear a número
-    double? number = double.tryParse(cleanedText);
-
-    if (number == null) {
-      return text; // Devolver el texto original si no es válido
-    }
-
-    // 4. Formatear y devolver
-    return numberFormatterUS.format(number).trim();
-  }
-
-  // ----------------------------------------------------
-  // C. FUNCIÓN DINÁMICA
-  // ----------------------------------------------------
-
-  // ---  EXTRACCIÓN DEL NUMERO CON SIMBOLO ---
-  /// Devuelve el formateador de moneda (NumberFormat) apropiado
-  /// basándose en el Locale del sistema.
-  ///
-  /// @param locale El Locale actual del contexto (obtenido vía Localizations.localeOf(context)).
-  /// @returns Un NumberFormat predefinido. Por defecto, devuelve euroCurrency.
-  static NumberFormat getCurrencyFormatterByLocale(Locale locale) {
-    // Usamos el código de país (countryCode) para determinar la moneda.
-    // Lo convertimos a mayúsculas para asegurar la coincidencia.
-    final String? countryCode = locale.countryCode?.toUpperCase();
-
-    // Mapeo de códigos de país a formateadores de moneda
-    switch (countryCode) {
-      case 'US':
-        return usdCurrency;
-      case 'GB':
-        return poundCurrency;
-      case 'ES': // España
-      case 'FR': // Francia
-      case 'DE': // Alemania
-      case 'IT': // Italia
-      case 'NL': // Países Bajos
-      case 'BE': // Bélgica
-      case 'AT': // Austria
-      case 'IE': // Irlanda
-      case 'PT': // Portugal
-      case 'GR': // Grecia
-      case 'FI': // Finlandia
-      case 'SK': // Eslovaquia
-      case 'SI': // Eslovenia
-      case 'LT': // Lituania
-      case 'LV': // Letonia
-      case 'EE': // Estonia
-      case 'CY': // Chipre
-      case 'MT': // Malta
-      case 'HR': // Croacia
-        return euroCurrency;
-
-      default:
-        switch (locale.languageCode) {
-          // Si el idioma es español, asumimos EURO (convención ES)
-          case 'es':
-            return euroCurrency;
-          // Si el idioma es inglés, asumimos DÓLAR (convención US)
-          case 'en':
-            return usdCurrency;
-          // Si no hay país ni idioma conocido, volvemos a un fallback seguro
-          default:
-            return usdCurrency;
-        }
-    }
-  }
-
-  // ---  EXTRACCIÓN DEL NUMERO SIN SIMBOLO ---
-  /// Retorna un [NumberFormat] basado en el [locale] para formatear un valor
-  /// numérico SIN NINGÚN SÍMBOLO DE MONEDA. Solo aplica separadores localizados.
-  static NumberFormat getLocalizedNumberFormatterByLocale(Locale locale) {
-    // 1. Obtenemos el formateador de moneda base para el locale dado.
-    // Esto asegura que se usa la convención de puntuación correcta (., o ,.)
-    final baseFormatter = getCurrencyFormatterByLocale(locale);
-
-    // 2. Creamos un nuevo NumberFormat que COPIA TODAS las propiedades del base
-    // (como el locale, decimalDigits, patrones de agrupación),
-    // pero establece el símbolo de moneda (symbol) a una cadena vacía ('').
-    return NumberFormat.currency(
-      locale: baseFormatter.locale,
-      // La clave es pasar una cadena vacía para que no muestre el símbolo.
-      symbol: '',
-      decimalDigits: baseFormatter.decimalDigits,
-      // La propiedad name se usa para el patrón de número, si es necesario.
-      name: baseFormatter.currencyName,
-    );
-  }
-
-  // ---  EXTRACCIÓN DEL SÍMBOLO ---
-
-  /// Retorna el símbolo de moneda de tres caracteres (por ejemplo, '€', '\$', '£')
-  /// basado en el [locale] de Flutter.
-  static String getCurrencySymbolByLocale(Locale locale) {
-    // Reutilizamos la lógica de getCurrencyFormatterByLocale para determinar la moneda.
-    final formatter = getCurrencyFormatterByLocale(locale);
-
-    // Devolvemos la propiedad currencySymbol del formateador.
-    return formatter.currencySymbol;
-  }
-
   static Locale getPlatformLocale() {
     final locales = WidgetsBinding.instance.platformDispatcher.locales;
 
@@ -341,40 +174,6 @@ class AppFormatters {
     // C) En cualquier otro caso (número completo o parte entera), devuelve el valor formateado.
     return intergerFormat;
   }
-  // static String getFormatedNumber(
-  //   String textToFormat,
-  //   String text,
-  //   double amount,
-  // ) {
-  //   String decimalFormat = NumberFormat.decimalPatternDigits(
-  //     locale: 'es_ES',
-  //   ).format(amount);
-  //   String intergetFormat = NumberFormat.decimalPatternDigits(
-  //     locale: 'es_ES',
-  //     decimalDigits: 0,
-  //   ).format(amount);
-
-  //   // SI EL VALOR(TEXT) ESTA VACIO, DEVOLVEMOS EL NUMERO CON DOS DECIMALES
-  //   if (text.isEmpty) {
-  //     textToFormat = text;
-  //     textToFormat = decimalFormat;
-  //   }
-  //   //TIENE DECIMALES POR LO QUE TENEMOS QUE CONVERTIRLO
-  //   else if (text.contains('.') && text.split('.').length == 2) {
-  //     String a = text.split('.').length.toString();
-  //     debugPrint(a);
-  //     debugPrint('text$text');
-  //     debugPrint('decimalFormat$decimalFormat');
-  //     debugPrint('textFormat$textToFormat');
-  //     debugPrint('lengt${text.split('.').length}');
-  //     textToFormat = text;
-  //     textToFormat = decimalFormat;
-  //   } else {
-  //     textToFormat = decimalFormat;
-  //   }
-
-  //   return textToFormat;
-  // }
 
   //###################################################################################
   //###################################################################################
@@ -384,6 +183,14 @@ class AppFormatters {
 
   static String customDateFormatShort(DateTime date) {
     return DateFormat.yMMMd('es').format(date);
+  }
+
+  static String customDateFormatMonthYear(DateTime date) {
+    return DateFormat.yMMMM('es').format(date);
+  }
+
+  static String customDateOnlyMonth(DateTime date) {
+    return DateFormat.MMMM('es').format(date);
   }
 }
 

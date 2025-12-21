@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/provider/networth_provider.dart';
+import 'package:neto_app/provider/shared_preferences_provider.dart';
 import 'package:neto_app/provider/user_provider.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -32,11 +33,18 @@ class _FormModalState extends State<FormModal> {
   TextEditingController nameController = TextEditingController();
   TextEditingController amountController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late String currency;
 
   @override
   void initState() {
     super.initState();
     amountController.addListener(_replaceCommaWithDot);
+    setState(() {
+      currency = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      ).currentCurrency;
+    });
   }
 
   @override
@@ -85,7 +93,14 @@ class _FormModalState extends State<FormModal> {
       name: name,
       type: widget.assetType.name,
       currentBalance: amount,
-      history: [BalanceHistory(date: DateTime.now(), balance: amount)],
+      currency: currency,
+      history: [
+        BalanceHistory(
+          date: DateTime.now(),
+          balance: amount,
+          currency: currency,
+        ),
+      ],
     );
 
     try {
@@ -105,6 +120,7 @@ class _FormModalState extends State<FormModal> {
   @override
   Widget build(BuildContext context) {
     TextTheme textTheme = Theme.of(context).textTheme;
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       //resizeToAvoidBottomInset: false,
@@ -163,28 +179,87 @@ class _FormModalState extends State<FormModal> {
                   ),
                   const SizedBox(height: 20),
                   // Campo Importe
-                  StandarTextField(
-                    controller: amountController,
-                    colorFocusBorder: Colors.transparent,
-                    enable: true,
-                    hintText: 'Importe actual',
-                    filled: true,
-                    textInputType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                  Row(
+                    spacing: 10,
+                    children: [
+                      Expanded(
+                        child: StandarTextField(
+                          controller: amountController,
+                          colorFocusBorder: Colors.transparent,
+                          enable: true,
+                          hintText: 'Importe actual',
+                          filled: true,
+                          textInputType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[\d.,]'),
+                            ),
+                          ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Introduce el importe actual.';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'El valor debe ser un número.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+
+                      Container(
+                        alignment: Alignment.center,
+                        height: 55,
+                        width: 100,
+                        decoration: decorationContainer(
+                          context: context,
+                          colorFilled: colorScheme.surface,
+                          radius: 12,
+                        ),
+                        child: PopupMenuButton<String>(
+                          menuPadding: EdgeInsets.only(right: 30),
+                          popUpAnimationStyle: AnimationStyle(),
+                          shape: RoundedRectangleBorder(
+                            // Define el radio de las esquinas
+                            borderRadius: BorderRadius.circular(20.0),
+                          ),
+                          color: colorScheme.surface,
+
+                          child: Text(currency, style: textTheme.bodyMedium),
+
+                          // 2. EL CONTENIDO DEL MENÚ (Los items que aparecen)
+                          itemBuilder: (BuildContext context) {
+                            return Currency.availableCurrencies.map((
+                              Currency cur,
+                            ) {
+                              return PopupMenuItem<String>(
+                                // onTap: () {
+                                //   currency = cur.code;
+                                // },
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                value: cur.code,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18.0,
+                                  ),
+                                  child: Text(cur.code),
+                                ),
+                              );
+                            }).toList();
+                          },
+
+                          onSelected: (String selectedCode) {
+                            setState(() {
+                              currency = selectedCode;
+                              debugPrint(currency);
+                            });
+                          },
+                        ),
+                      ),
                     ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Introduce el importe actual.';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'El valor debe ser un número.';
-                      }
-                      return null;
-                    },
                   ),
                 ],
               ),

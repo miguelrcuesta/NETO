@@ -4,15 +4,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // 1. CLASE AUXILIAR: Historial de Balance
 // =========================================================
 
-/// Clase para el historial de valor/saldo de cualquier activo.
 class BalanceHistory {
   final DateTime date;
   final double balance;
+  final String currency; // <--- Añadido
 
-  BalanceHistory({required this.date, required this.balance});
+  BalanceHistory({
+    required this.date,
+    required this.balance,
+    required this.currency, // <--- Añadido
+  });
 
   factory BalanceHistory.fromJson(Map<String, dynamic> json) {
-    // Manejo de fecha como Timestamp (Firestore) o String (JSON estándar)
     dynamic dateValue = json['date'];
     DateTime date;
 
@@ -25,24 +28,28 @@ class BalanceHistory {
     return BalanceHistory(
       date: date,
       balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
+      currency: json['currency'] as String? ?? 'USD', // <--- Añadido
     );
   }
 
   Map<String, dynamic> toJson() {
-    // Para serialización a Firestore, se recomienda usar DateTime/Timestamp
-    return {'date': date, 'balance': balance};
+    return {
+      'date': date,
+      'balance': balance,
+      'currency': currency, // <--- Añadido
+    };
   }
 }
 
 // =========================================================
-// 2. CLASE ABSTRACTA BASE (Tu definición)
+// 2. CLASE ABSTRACTA BASE
 // =========================================================
 
-/// Clase abstracta base para todos los activos de patrimonio neto.
 abstract class AssetModel {
   final String? assetId;
   final String name;
   final String type;
+  final String currency; // <--- Añadido
 
   final double currentBalance;
   final List<BalanceHistory>? history;
@@ -53,6 +60,7 @@ abstract class AssetModel {
     this.assetId,
     required this.name,
     required this.type,
+    required this.currency, // <--- Añadido
     required this.currentBalance,
     this.history,
     this.dateCreated,
@@ -61,12 +69,11 @@ abstract class AssetModel {
 
   Map<String, dynamic> toJson();
 
-  /// FIRMA AÑADIDA: Define el método copyWith en la clase abstracta.
-  /// Esto asegura que cualquier clase que extienda AssetModel deba implementarlo.
   AssetModel copyWith({
     String? assetId,
     String? name,
     String? type,
+    String? currency, // <--- Añadido
     double? currentBalance,
     List<BalanceHistory>? history,
     DateTime? dateCreated,
@@ -75,24 +82,21 @@ abstract class AssetModel {
 }
 
 // =========================================================
-// 3. CLASE CONCRETA: NetWorthAsset (Implementación directa)
+// 3. CLASE CONCRETA: NetWorthAsset
 // =========================================================
 
-/// Clase concreta que implementa AssetModel para ser usada en la base de datos.
 class NetWorthAsset extends AssetModel {
   NetWorthAsset({
     super.assetId,
     required super.name,
     required super.type,
+    required super.currency, // <--- Añadido
     required super.currentBalance,
     super.history,
     super.dateCreated,
     super.lastUpdated,
   });
 
-  // ----------------------------------------------------
-  // FROM JSON/MAP (Deserialización)
-  // ----------------------------------------------------
   factory NetWorthAsset.fromJson(Map<String, dynamic> json) {
     final List<dynamic> historyList = json['history'] ?? [];
 
@@ -103,7 +107,7 @@ class NetWorthAsset extends AssetModel {
       assetId: json['assetId'] as String?,
       name: json['name'] as String? ?? 'Unnamed Asset',
       type: json['type'] as String? ?? 'general',
-
+      currency: json['currency'] as String? ?? 'USD', // <--- Añadido
       currentBalance: (json['currentBalance'] as num?)?.toDouble() ?? 0.0,
       history: historyList
           .map((item) => BalanceHistory.fromJson(item as Map<String, dynamic>))
@@ -113,15 +117,13 @@ class NetWorthAsset extends AssetModel {
     );
   }
 
-  // ----------------------------------------------------
-  // TO JSON/MAP (Serialización)
-  // ----------------------------------------------------
   @override
   Map<String, dynamic> toJson() {
     return {
       'assetId': assetId,
       'name': name,
       'type': type,
+      'currency': currency, // <--- Añadido
       'currentBalance': currentBalance,
       'history': history != null
           ? history!.map((h) => h.toJson()).toList()
@@ -131,16 +133,12 @@ class NetWorthAsset extends AssetModel {
     };
   }
 
-  // ----------------------------------------------------
-  // COPY WITH (Implementación OBLIGATORIA)
-  // ----------------------------------------------------
-
-  /// Crea una copia del objeto NetWorthAsset, reemplazando los campos opcionales proporcionados.
-  @override // Se añade el override porque está en la clase abstracta
+  @override
   NetWorthAsset copyWith({
     String? assetId,
     String? name,
     String? type,
+    String? currency, // <--- Añadido
     double? currentBalance,
     List<BalanceHistory>? history,
     DateTime? dateCreated,
@@ -150,6 +148,7 @@ class NetWorthAsset extends AssetModel {
       assetId: assetId ?? this.assetId,
       name: name ?? this.name,
       type: type ?? this.type,
+      currency: currency ?? this.currency, // <--- Añadido
       currentBalance: currentBalance ?? this.currentBalance,
       history: history ?? this.history,
       dateCreated: dateCreated ?? this.dateCreated,

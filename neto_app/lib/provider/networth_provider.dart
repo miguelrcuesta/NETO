@@ -44,7 +44,6 @@ class NetWorthAssetProvider extends ChangeNotifier {
   //====================================================================
 
   Future<void> loadInitialAssets() async {
-    // ⭐️ SOLUCIÓN AL ERROR DE SETSTATE
     await Future.delayed(Duration.zero);
 
     _isLoadingInitial = true;
@@ -92,7 +91,8 @@ class NetWorthAssetProvider extends ChangeNotifier {
       );
 
       if (result.data.isNotEmpty) {
-        _assets.addAll(result.data);
+        //_assets.addAll(result.data);
+        _assets = result.data;
         _sortAssets();
       }
 
