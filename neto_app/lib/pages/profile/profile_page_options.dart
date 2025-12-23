@@ -7,6 +7,7 @@ import 'package:neto_app/provider/user_provider.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
+import 'package:neto_app/widgets/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,6 +67,13 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
     );
   }
 
+  void showFavoriteCategoriesSheet(BuildContext context) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => const FavoriteCategoriesModal(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
@@ -98,42 +106,76 @@ class _ProfilesOptionsPageState extends State<ProfilesOptionsPage> {
                 userProvider,
               ),
               _themeSwitch(settingsProvider, userProvider),
+              Container(
+                height: 50,
+                width: double.infinity,
+                decoration: decorationContainer(
+                  context: context,
+                  colorFilled: colorScheme.primaryContainer,
+                  radius: 10,
+                ),
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  top: 8.0,
+                  bottom: 8.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Categorías favoritas',
+                      style: textTheme.bodyMedium!.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => showFavoriteCategoriesSheet(
+                        context,
+                      ), // También en el icono
+                      icon: const Icon(CupertinoIcons.chevron_right, size: 15),
+                    ),
+                  ],
+                ),
+              ),
+
               Spacer(),
 
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: 20.0,
-                  left: 10.0,
-                  right: 10.0,
-                ),
-                child: StandarButton(
-                  radius: 100,
-                  backgroundColor: colorScheme.primary,
-                  textColor: colorScheme.onPrimary,
-                  height: AppDimensions.inputFieldHeight,
-                  width: double.infinity,
-                  onPressed: () {
-                    Provider.of<UserProvider>(context, listen: false).logout();
-                  },
-                  text: 'Cerrar sesión',
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20.0),
-                child: TextButton(
-                  onPressed: () {},
-
-                  child: Text(
-                    'Eliminar cuenta',
-                    style: textTheme.bodyMedium!.copyWith(
-                      color: colorScheme.error,
-                    ),
-                  ),
-                ),
-              ),
+              _logout(colorScheme, context),
+              _deleteAcount(textTheme, colorScheme),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Padding _deleteAcount(TextTheme textTheme, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: TextButton(
+        onPressed: () {},
+
+        child: Text(
+          'Eliminar cuenta',
+          style: textTheme.bodyMedium!.copyWith(color: colorScheme.error),
+        ),
+      ),
+    );
+  }
+
+  Padding _logout(ColorScheme colorScheme, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20.0, left: 10.0, right: 10.0),
+      child: StandarButton(
+        radius: 100,
+        backgroundColor: colorScheme.primary,
+        textColor: colorScheme.onPrimary,
+        height: AppDimensions.inputFieldHeight,
+        width: double.infinity,
+        onPressed: () {
+          Provider.of<UserProvider>(context, listen: false).logout();
+        },
+        text: 'Cerrar sesión',
       ),
     );
   }

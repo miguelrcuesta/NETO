@@ -4,9 +4,168 @@ import 'package:flutter/services.dart';
 import 'package:neto_app/constants/app_enums.dart';
 import 'package:neto_app/constants/app_utils.dart';
 import 'package:neto_app/models/networth_model.dart';
+import 'package:neto_app/services/shared_preferences_services.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
 
+//======================================================================
+//FAV CATEGORIES
+//======================================================================
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:neto_app/constants/app_enums.dart';
+import 'package:neto_app/services/shared_preferences_services.dart';
+
+class FavoriteCategoriesModal extends StatefulWidget {
+  const FavoriteCategoriesModal({super.key});
+
+  @override
+  State<FavoriteCategoriesModal> createState() =>
+      _FavoriteCategoriesModalState();
+}
+
+class _FavoriteCategoriesModalState extends State<FavoriteCategoriesModal> {
+  int _selectedSegment = 0;
+  final PreferencesManager _prefs = PreferencesManager();
+
+  // Función para mostrar alerta de confirmación
+  void _showClearAllDialog(BuildContext context, bool isExpense) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text("Eliminar favoritos"),
+        content: Text(
+          "¿Estás seguro de que quieres eliminar todos tus favoritos de ${isExpense ? 'gastos' : 'ingresos'}?",
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("Cancelar"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () async {
+              await _prefs.clearAllFavorites(isExpense);
+              setState(() {}); // Refrescar UI
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text("Eliminar todo"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bool isExpense = _selectedSegment == 0;
+    final List categories = isExpense ? Expenses.values : Incomes.values;
+
+    return Material(
+      child: CupertinoPageScaffold(
+        backgroundColor: colorScheme.surface,
+        navigationBar: CupertinoNavigationBar(
+          backgroundColor: colorScheme.surface,
+          middle: const Text("Configurar Favoritos"),
+          leading: CupertinoButton(
+            padding: EdgeInsets.zero,
+            child: const Text("Cerrar"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          // BOTÓN CLEAR ALL AÑADIDO AQUÍ
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => _showClearAllDialog(context, isExpense),
+            child: const Text("Limpiar"),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              CupertinoSlidingSegmentedControl<int>(
+                groupValue: _selectedSegment,
+                children: const {
+                  0: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text('Gastos'),
+                  ),
+                  1: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text('Ingresos'),
+                  ),
+                },
+                onValueChanged: (v) => setState(() => _selectedSegment = v!),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListView.builder(
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            color: colorScheme.primaryContainer.withOpacity(
+                              0.1,
+                            ),
+                            child: Text(
+                              "${category.emoji} ${category.nombre}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          ...category.subcategorias.map<Widget>((subName) {
+                            final bool isFav = _prefs.isSubFavorite(
+                              category.id,
+                              subName,
+                              isExpense,
+                            );
+                            return ListTile(
+                              title: Text(
+                                subName,
+                                style: textTheme.bodyMedium!.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              trailing: Icon(
+                                isFav ? Icons.star : Icons.star_border,
+                                color: isFav
+                                    ? Colors.amber
+                                    : colorScheme.onSurfaceVariant,
+                              ),
+                              onTap: () async {
+                                await _prefs.toggleFavoriteSubcategory(
+                                  catId: category.id,
+                                  catName: category.nombre,
+                                  subName: subName,
+                                  isExpense: isExpense,
+                                );
+                                setState(() {});
+                              },
+                            );
+                          }).toList(),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 //======================================================================
 //CUSTOM KEYBOARDS
 //======================================================================

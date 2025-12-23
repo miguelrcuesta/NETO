@@ -17,6 +17,7 @@ import 'package:neto_app/provider/reports_provider.dart';
 import 'package:neto_app/provider/transaction_provider.dart';
 
 import 'package:neto_app/services/api.dart';
+import 'package:neto_app/services/shared_preferences_services.dart';
 import 'package:neto_app/widgets/app_bars.dart';
 import 'package:neto_app/widgets/app_buttons.dart';
 import 'package:neto_app/widgets/app_fields.dart';
@@ -45,6 +46,7 @@ class TransactionDetailsCreatePage extends StatefulWidget {
 
 class _TransactionDetailsCreatePageState
     extends State<TransactionDetailsCreatePage> {
+  final PreferencesManager _prefs = PreferencesManager();
   //#####################################################################################
   //CONTROLLERS
   //#####################################################################################
@@ -167,6 +169,9 @@ class _TransactionDetailsCreatePageState
 
   @override
   void initState() {
+    // favExpenses = _prefs.favExpenses;
+    // favIncomes = _prefs.favIncomes;
+    _prefs.initialize();
     transactionModel = widget.transactionModel ?? TransactionModel.empty();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -401,174 +406,243 @@ class _TransactionDetailsCreatePageState
 
     return GestureDetector(
       onTap: () {
-        showCustomCupertinoListSheet(context, textTheme, colorScheme);
+        showCategories(context, textTheme, colorScheme);
       },
       child: _categoryAnimation(textTheme, colorScheme, displayCategory),
     );
   }
 
-  void showCustomCupertinoListSheet(
+  void showCategories(
     BuildContext context,
     TextTheme textTheme,
     ColorScheme colorScheme,
   ) async {
+    int modalTab = 0;
+
     await showCupertinoModalPopup(
       context: context,
+      // Con barrierDismissible: true permites cerrar tocando fuera
+      barrierDismissible: true,
       builder: (BuildContext dialogContext) {
-        // 1. Obtener la lista de categorías basada en el tipo de transacción
-        final List categories = (transactionType == TransactionType.expense)
-            ? Expenses
-                  .values // Asume que esta enum/clase existe
-            : Incomes.values; // Asume que esta enum/clase existe
+        final bool isExpense = transactionType == TransactionType.expense;
+        final List allCategories = isExpense ? Expenses.values : Incomes.values;
 
-        // 2. StatefulBuilder para manejar el cambio de selección de chips
         return StatefulBuilder(
           builder: (context, myState) {
-            // 3. ENVOLVER en Material: Corrige el error "No Material widget found"
+            final List<String> favStrings = isExpense
+                ? _prefs.favExpenses
+                : _prefs.favIncomes;
+
+            // Usamos Material aquí para evitar las líneas amarillas en los textos
             return Material(
-              color: colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-
-              child: SizedBox(
-                child: CupertinoPageScaffold(
-                  // Fondo transparente para ver el borde redondeado del Material
+              child: CupertinoPageScaffold(
+                backgroundColor: colorScheme.surface,
+                navigationBar: CupertinoNavigationBar(
                   backgroundColor: colorScheme.surface,
-
-                  navigationBar: CupertinoNavigationBar(
-                    leading: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        "Atrás", // Corregido a "Atrás"
-                        style: textTheme.bodySmall!.copyWith(
-                          color: Colors.blue,
-                        ),
+                  // Control de pestañas en el centro
+                  middle: CupertinoSlidingSegmentedControl<int>(
+                    groupValue: modalTab,
+                    children: const {
+                      0: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text("Favoritas"),
                       ),
-                    ),
-
-                    backgroundColor: colorScheme.surface,
-                    border: const Border(
-                      bottom: BorderSide(
-                        color: CupertinoColors.systemGrey5,
-                        width: 0.0,
+                      1: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text("Todas"),
                       ),
-                    ),
-                  ),
-
-                  // 4. BODY: ListView.builder para las secciones
-                  child: ListView.builder(
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      // Asume que 'subcategorias' es una propiedad de tu objeto category
-                      final List subcategories = category.subcategorias;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 12.0,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // --- Fila de Categoría Principal ---
-                            Row(
-                              children: [
-                                Text(
-                                  category.emoji,
-                                  style: textTheme.bodyLarge!.copyWith(
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  category.nombre,
-                                  style: textTheme.bodyMedium!.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-
-                            // --- Chips de Subcategorías ---
-                            Wrap(
-                              spacing: 8.0,
-                              runSpacing: 8.0,
-                              children: List.generate(subcategories.length, (
-                                j,
-                              ) {
-                                final String subcategoryName = subcategories[j];
-                                final bool isSelected =
-                                    selectedSubcategoryChoice ==
-                                    subcategoryName;
-
-                                return ActionChip(
-                                  labelPadding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  label: Text(subcategoryName),
-
-                                  backgroundColor: isSelected
-                                      ? colorScheme.primary
-                                      : Colors.transparent,
-                                  labelStyle: textTheme.bodySmall!.copyWith(
-                                    color: isSelected
-                                        ? colorScheme.onPrimary
-                                        : colorScheme.onSurface,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  onPressed: () {
-                                    myState(() {
-                                      if (!isSelected) {
-                                        updateSelectedChoice(
-                                          category.id,
-                                          category.nombre,
-                                          subcategoryName,
-                                        );
-                                      }
-
-                                      debugPrint(selectedCategoryChoice);
-                                      debugPrint(selectedSubcategoryChoice);
-                                    });
-
-                                    setState(() {
-                                      if (!isSelected) {
-                                        updateSelectedChoice(
-                                          category.id,
-                                          category.nombre,
-                                          subcategoryName,
-                                        );
-                                      }
-
-                                      debugPrint(selectedCategoryChoice);
-                                      debugPrint(selectedSubcategoryChoice);
-                                    });
-                                  },
-                                );
-                              }),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.only(top: 12.0),
-                              child: Divider(height: 1),
-                            ),
-                          ],
-                        ),
-                      );
                     },
+                    onValueChanged: (v) => myState(() => modalTab = v!),
+                  ),
+                  leading: CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    child: const Text("Atrás"),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
+                // El cuerpo ahora ocupa todo el espacio disponible
+                child: modalTab == 0
+                    ? _buildFavoritesTab(
+                        favStrings,
+                        colorScheme,
+                        textTheme,
+                        myState,
+                      )
+                    : _buildAllTab(
+                        allCategories,
+                        colorScheme,
+                        textTheme,
+                        myState,
+                      ),
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  // TAB 0: SOLO FAVORITAS
+  Widget _buildFavoritesTab(
+    List<String> favs,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    StateSetter myState,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+              minWidth: double.infinity,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: favs.isEmpty
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (favs.isEmpty) ...[
+                    // ... (Mismo código de estado vacío que antes)
+                  ] else ...[
+                    Text(
+                      "Tus favoritas",
+                      style: textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 12.0,
+                      children: favs.map((favString) {
+                        // 1. CAMBIO CLAVE: Usamos ':' como separador según tu imagen
+                        final parts = favString.split(':');
+
+                        // 2. CAMBIO CLAVE: Verificamos que al menos haya 2 partes
+                        if (parts.length < 2) return const SizedBox();
+
+                        final String catId = parts[0]; // Ej: "VIVIENDA"
+                        final String subName = parts[1]; // Ej: "Alquiler"
+
+                        // Buscamos el nombre real de la categoría para el label (opcional)
+                        // O simplemente usamos catId como nombre.
+                        final bool isSelected =
+                            selectedSubcategoryChoice == subName &&
+                            selectedCategoryId == catId;
+
+                        return ActionChip(
+                          avatar: Icon(
+                            Icons.star,
+                            size: 14,
+                            color: Colors.amber,
+                          ),
+                          label: Text(subName),
+                          // Estilo visual mejorado
+                          backgroundColor: isSelected
+                              ? colorScheme.primary
+                              : colorScheme.primaryContainer,
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          labelStyle: textTheme.bodySmall?.copyWith(
+                            color: isSelected
+                                ? colorScheme.onPrimary
+                                : colorScheme.onPrimaryContainer,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          onPressed: () {
+                            // Actualizamos con los datos que tenemos
+                            updateSelectedChoice(catId, catId, subName);
+                            Navigator.pop(context);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // TAB 1: TODAS (Tu lógica anterior)
+  Widget _buildAllTab(
+    List categories,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    StateSetter myState,
+  ) {
+    return ListView.builder(
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories[index];
+        final List subcategories = category.subcategorias;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(category.emoji, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
+                  Text(
+                    category.nombre,
+                    style: textTheme.bodyMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: subcategories.map<Widget>((subName) {
+                  final bool isSelected =
+                      selectedSubcategoryChoice == subName &&
+                      selectedCategoryId == category.id;
+
+                  return ActionChip(
+                    label: Text(subName),
+                    backgroundColor: isSelected
+                        ? colorScheme.primary
+                        : Colors.transparent,
+                    labelStyle: textTheme.bodySmall!.copyWith(
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
+                    ),
+                    onPressed: () {
+                      updateSelectedChoice(
+                        category.id,
+                        category.nombre,
+                        subName,
+                      );
+                      // Aquí no hacemos pop para que el usuario vea la selección,
+                      // o puedes hacerlo si prefieres cerrar rápido.
+                      myState(() {});
+                      setState(() {});
+                    },
+                  );
+                }).toList(),
+              ),
+              const Divider(),
+            ],
+          ),
         );
       },
     );
@@ -795,7 +869,7 @@ class _TransactionDetailsCreatePageState
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
-          color: Colors.white, // Fondo del menú emergente
+          color: colorScheme.surface,
           elevation: 8.0,
 
           //  3. El CHILD define el botón o área que el usuario toca.

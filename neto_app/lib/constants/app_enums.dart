@@ -97,7 +97,7 @@ enum Expenses {
   ),
   alimentacion(
     id: 'ALIMENTACION',
-    emoji: '',
+    emoji: '🛒',
     iconData: Icons.restaurant,
     nombre: 'Alimentación',
     subcategorias: [
