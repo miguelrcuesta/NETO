@@ -1,66 +1,80 @@
-from flask import Flask, jsonify,request
-
-import category_prompt as promt
-
-app = Flask(__name__)
-
-
-###########################################
-# GET GEMINI CATEGORY
-###########################################
-
 import os
 import json
+from flask import Flask, jsonify, request
 from google import genai
 from google.genai.errors import APIError
 from typing import Dict, Any
 
-from flask import Flask, jsonify, request
+# --- CONFIGURACIÓN DE FIREBASE ---
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-# --- CONFIGURACIÓN DE SEGURIDAD Y APLICACIÓN ---
+if not firebase_admin._apps:
+    # 1. Obtener el string de la variable de entorno
+    json_string = os.getenv("FIREBASE_CONFIG")
+    
+    if json_string:
+        # 2. IMPORTANTE: Convertir el string a un Diccionario de Python
+        config_dict = json.loads(json_string)
+        
+        # 3. Pasar el diccionario al Certificado
+        cred = credentials.Certificate(config_dict)
+        firebase_admin.initialize_app(cred)
+    else:
+        print("Error: Variable FIREBASE_CONFIG vacía")
 
-# 1. Configuración de Flask
+db = firestore.client()
+
+# --- CONFIGURACIÓN DE GEMINI ---
+import category_prompt as promt
+API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_FLASH = 'gemini-2.0-flash' # O la versión que prefieras
+
 app = Flask(__name__)
 
-# 2. Obtener la Clave API de la variable de entorno
-API_KEY = "AIzaSyBha_Lty0xq1Fxkc72POAwKTzNghJ7_0Ck"
-#API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_FLASH = 'gemini-2.5-flash' 
+# ================================================================
+# CAPA 1: SERVICIOS DE FIREBASE (Llamadas a la DB)
+# ================================================================
 
-#================================================================
-#FUNCIONES
-#================================================================
+def fetch_user_networth_data(uid: str) -> str:
+    """
+    Consulta la colección 'networth_assets' filtrando por el UID del usuario.
+    Devuelve un string JSON con los datos encontrados.
+    """
+    try:
+        # Buscamos en la colección 'networth_assets' donde el campo userId coincida con el uid
+        assets_ref = db.collection('networth_assets')
+        query = assets_ref.where('userId', '==', uid).stream()
 
-# --- FUNCIÓN DE GENERACIÓN DE UNA CATEGORIA CON IA ---
-def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
-    """
-    Llama a la API de Gemini para clasificar una transacción y devuelve el resultado.
-    Si la API_KEY no está configurada, devuelve un resultado de ERROR/FALLBACK.
-    """
-    # Define la categoría de fallback para estos casos
+        assets_list = []
+        for doc in query:
+            data = doc.to_dict()
+            # Opcional: convertir timestamps de Firebase a string para JSON
+            assets_list.append(data)
+
+        if not assets_list:
+            return "[]"
+            
+        return json.dumps(assets_list, default=str)
+    except Exception as e:
+        app.logger.error(f"Error en Firebase Service: {e}")
+        raise e
+
+# ================================================================
+# CAPA 2: SERVICIOS DE GEMINI (Llamadas a la IA)
+# ================================================================
+
+def classify_transaction_gemini(description: str, locale: str) -> Dict[str, str]:
     FALLBACK_CATEGORY = "OTROS_GASTOS"
-    FALLBACK_SUBCATEGORY = "Otros Gastos Varios" 
+    FALLBACK_SUBCATEGORY = "Otros Gastos Varios"
 
     if not API_KEY:
-        # CORRECCIÓN: Eliminamos 'e' y solo registramos el error de configuración.
-        app.logger.error("FATAL: La clave GEMINI_API_KEY no está configurada. Devolviendo FALLBACK.")
-        
-        # Devolvemos un resultado de negocio 200 con un estado OFFLINE
-        return {
-            "idcategoria": FALLBACK_CATEGORY, 
-            "categoria": FALLBACK_CATEGORY, 
-            "subcategoria": FALLBACK_SUBCATEGORY,
-            "ia_status": "OFFLINE" # Indica al cliente que la IA no estaba disponible
-        }
+        return {"idcategoria": FALLBACK_CATEGORY, "categoria": FALLBACK_CATEGORY, 
+                "subcategoria": FALLBACK_SUBCATEGORY, "ia_status": "OFFLINE"}
 
     try:
-        # 1. Inicializar el cliente
         client = genai.Client(api_key=API_KEY)
-        
-        # 2. Generar el prompt con la descripción
-        prompt =promt.get_category_gemini_prompt(description,locale)
-
-        # 3. Llamar a la API con configuración JSON estricta
+        prompt = promt.get_category_gemini_prompt(description, locale)
         response = client.models.generate_content(
             model=GEMINI_FLASH,
             contents=prompt,
@@ -73,60 +87,24 @@ def classify_transaction_gemini(description: str,locale: str) -> Dict[str, str]:
                         "categoria": {"type": "string"},
                         "subcategoria": {"type": "string"}
                     },
-                    "required": ["idcategoria","categoria", "subcategoria"]
+                    "required": ["idcategoria", "categoria", "subcategoria"]
                 }
             }
         )
-
-        # 4. Devolver el JSON (como diccionario de Python)
         result = json.loads(response.text)
         result["ia_status"] = "SUCCESS"
         return result
-
-    except APIError as e:
-        app.logger.error(f"Error de API (Gemini) al clasificar: {e}")
-        return {
-            "idcategoria": FALLBACK_CATEGORY, 
-            "categoria": FALLBACK_CATEGORY, 
-            "subcategoria": FALLBACK_SUBCATEGORY,
-            "ia_status": "FAILED" # Falló la llamada a Google
-        }
     except Exception as e:
-        app.logger.error(f"Error inesperado al procesar la respuesta: {e.args}")
-        return {
-            "idcategoria": FALLBACK_CATEGORY, 
-            "categoria": FALLBACK_CATEGORY, 
-            "subcategoria": FALLBACK_SUBCATEGORY,
-            "ia_status": "FAILED_UNKNOWN" # Falló el código Python
-        }
-    
-def networth_resume_gemini(asset_data_json: str, user_question: str ,locale: str) -> Dict[str, str]:
-    """
-    Llama a la API de Gemini para clasificar una transacción y devuelve el resultado.
-    Si la API_KEY no está configurada, devuelve un resultado de ERROR/FALLBACK.
-    """
-    # Define la categoría de fallback para estos casos
-    FALLBACK_RESUME = "ERROR"
-    
+        app.logger.error(f"Error Gemini Classify: {e}")
+        return {"idcategoria": FALLBACK_CATEGORY, "categoria": "ERROR", "ia_status": "FAILED"}
 
+def networth_resume_gemini(asset_data_json: str, user_question: str, locale: str) -> Dict[str, str]:
     if not API_KEY:
-        # CORRECCIÓN: Eliminamos 'e' y solo registramos el error de configuración.
-        app.logger.error("FATAL: La clave GEMINI_API_KEY no está configurada. Devolviendo FALLBACK.")
-        
-        # Devolvemos un resultado de negocio 200 con un estado OFFLINE
-        return {
-            "resume": FALLBACK_RESUME, 
-            "ia_status": "OFFLINE" 
-        }
+        return {"resume": "ERROR", "ia_status": "OFFLINE"}
 
     try:
-        # 1. Inicializar el cliente
         client = genai.Client(api_key=API_KEY)
-        
-        # 2. Generar el prompt con la descripción
-        prompt = promt.get_networth_resume_gemini_prompt(asset_data_json,user_question,locale)
-
-        # 3. Llamar a la API con configuración JSON estricta
+        prompt = promt.get_networth_resume_gemini_prompt(asset_data_json, user_question, locale)
         response = client.models.generate_content(
             model=GEMINI_FLASH,
             contents=prompt,
@@ -134,104 +112,62 @@ def networth_resume_gemini(asset_data_json: str, user_question: str ,locale: str
                 "response_mime_type": "application/json",
                 "response_schema": {
                     "type": "object",
-                    "properties": {
-                        "resume": {"type": "string"},
-                        
-                        
-                    },
+                    "properties": {"resume": {"type": "string"}},
+                    "required": ["resume"]
                 }
             }
         )
-
-        # 4. Devolver el JSON (como diccionario de Python)
         result = json.loads(response.text)
         result["ia_status"] = "SUCCESS"
         return result
-
-    except APIError as e:
-        app.logger.error(f"Error de API (Gemini) al clasificar: {e}")
-        return {
-            "resume": FALLBACK_RESUME, 
-            "ia_status": "FAILED" # Falló la llamada a Google
-        }
     except Exception as e:
-        app.logger.error(f"Error inesperado al procesar la respuesta: {e.args}")
-        return {
-            "resume": FALLBACK_RESUME, 
-            "ia_status": "FAILED_UNKNOWN" # Falló el código Python
-        }
+        app.logger.error(f"Error Gemini Resume: {e}")
+        return {"resume": "ERROR", "ia_status": "FAILED"}
 
-
-
-
-
-#================================================================
-#LLAMADAS API
-#================================================================
-# --- ENDPOINT DE LA API (FLASK) ---
+# ================================================================
+# CAPA 3: LLAMADAS API (Flask Routes)
+# ================================================================
 
 @app.route('/classify', methods=['POST'])
 def classify_transaction_api():
-    """
-    Endpoint que recibe una descripción de transacción y devuelve la clasificación.
-    Espera un JSON: {"description": "Pago en Mercadona"}
-    """
-    # 1. Validar la solicitud
     data = request.get_json()
     if not data or 'description' not in data:
-        return jsonify({"error": "Falta la clave 'description' en el cuerpo del JSON."}), 400
+        return jsonify({"error": "Falta 'description'"}), 400
 
-    # 2. Obtener el valor del json
-    description = data.get('description', '')
-    locale = data.get('locale', '')
-
-    result = classify_transaction_gemini(description,locale)
-
-    # 3. Devolver la respuesta al cliente
-    
-    if result.get("categoria") == "ERROR":
-         return jsonify(result), 500 
-
+    result = classify_transaction_gemini(data.get('description'), data.get('locale', 'es'))
     return jsonify(result), 200
 
 @app.route('/networthResume', methods=['POST'])
 def networth_resume_api():
-    print("API RESUME")
     """
-    Endpoint que recibe un promt de usuario y devuelve un texto con el resumen de su patrimonio.
-    Espera un JSON: {"asset_data_json":<str>,"user_question":<str>  "Analiza la evolución de mi patrimonio en el ultimos años"}
+    NUEVA LÓGICA: Solo recibe el UID. La API busca los datos en Firebase.
+    Payload esperado: {"uid": "12345", "user_question": "...", "locale": "es"}
     """
-    # 1. Validar la solicitud
     data = request.get_json()
-    if not data or 'asset_data_json' not in data:
-        return jsonify({"error": "Falta la clave 'asset_data_json' en el cuerpo del JSON."}), 400
-
-    # 2. Obtener el valor del json
-    asset_data_json = data.get('asset_data_json', '')
-    user_question = data.get('user_question', '')
-    locale = data.get('locale', '')
-
-    result = networth_resume_gemini(asset_data_json=asset_data_json,user_question=user_question,locale=locale)
-
-    # 3. Devolver la respuesta al cliente
+    uid = data.get('uid')
     
-    if result.get("resume") == "ERROR":
-         return jsonify(result), 500 
+    if not uid:
+        return jsonify({"error": "Falta el 'uid' del usuario."}), 400
 
-    return jsonify(result), 200
+    try:
+        # 1. Llamada al servicio de Firebase
+        asset_data_json = fetch_user_networth_data(uid)
+        
+        # 2. Llamada al servicio de Gemini con los datos obtenidos de DB
+        result = networth_resume_gemini(
+            asset_data_json=asset_data_json,
+            user_question=data.get('user_question', ''),
+            locale=data.get('locale', 'es')
+        )
 
+        if result.get("resume") == "ERROR":
+            return jsonify(result), 500
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"error": "Error procesando la solicitud en el servidor"}), 500
 
 # --- INICIO DEL SERVIDOR ---
 if __name__ == '__main__':
-    # Verifica la clave API antes de iniciar
-    if not API_KEY:
-        print("************************************************************************")
-        print("ADVERTENCIA: La clave GEMINI_API_KEY no está configurada.")
-        print("Para configurar: export GEMINI_API_KEY='TU_CLAVE'")
-        print("************************************************************************")
-
-    print(f"Servidor Flask iniciado. Usa 'http://127.0.0.1:5000' (POST)")
     app.run(debug=True, port=5000)
-
-if __name__ == '__main__':  
-   app.run(debug=True,port=5000)

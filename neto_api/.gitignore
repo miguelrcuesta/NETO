@@ -1,4 +1,7 @@
-# .gitignore
+# Firebase / Google Cloud Secrets
+neto_api/serviceKey.json
+serviceKey.json
+serviceAccountKey.json
 
 # Archivos de entorno y configuraciones sensibles
 .env

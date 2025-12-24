@@ -61,7 +61,6 @@ def get_category_gemini_prompt(description: str,locale: str) -> str:
     """
     return prompt_base.format(description=description,locale=locale)
 
-
 def get_networth_resume_gemini_prompt(asset_data_json: str,user_question: str,locale: str) -> str:
     
     
