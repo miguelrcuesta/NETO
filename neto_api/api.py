@@ -4,33 +4,42 @@ from flask import Flask, jsonify, request
 from google import genai
 from google.genai.errors import APIError
 from typing import Dict, Any
+import category_prompt as promt
 
 # --- CONFIGURACIÓN DE FIREBASE ---
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-if not firebase_admin._apps:
-    # 1. Obtener el string de la variable de entorno
-    json_string = os.getenv("FIREBASE_CONFIG")
-    
-    if json_string:
-        # 2. IMPORTANTE: Convertir el string a un Diccionario de Python
-        config_dict = json.loads(json_string)
-        
-        # 3. Pasar el diccionario al Certificado
-        cred = credentials.Certificate(config_dict)
-        firebase_admin.initialize_app(cred)
-    else:
-        print("Error: Variable FIREBASE_CONFIG vacía")
-
 db = firestore.client()
 
 # --- CONFIGURACIÓN DE GEMINI ---
-import category_prompt as promt
+
 API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_FLASH = 'gemini-2.0-flash' # O la versión que prefieras
+GEMINI_FLASH = 'gemini-2.0-flash'
+
+def initialize_firebase():
+    if not firebase_admin._apps:
+        # 1. Intentamos leer el JSON completo desde el .env
+        config_env = os.getenv("FIREBASE_CONFIG")
+        
+        try:
+            if config_env:
+                # Si es un string JSON, lo convertimos a diccionario
+                config_dict = json.loads(config_env)
+                cred = credentials.Certificate(config_dict)
+            else:
+                # Fallback para desarrollo local usando el archivo (que está en .gitignore)
+                cred = credentials.Certificate("neto_api/serviceKey.json")
+                
+            firebase_admin.initialize_app(cred)
+            print("✅ Firebase conectado con éxito")
+        except Exception as e:
+            print(f"❌ Error al inicializar Firebase: {e}")
 
 app = Flask(__name__)
+
+# Inicializamos Firebase al arrancar la app
+initialize_firebase()
 
 # ================================================================
 # CAPA 1: SERVICIOS DE FIREBASE (Llamadas a la DB)
