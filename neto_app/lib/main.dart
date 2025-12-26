@@ -31,18 +31,10 @@ void main() async {
         // 1. Agregamos el UserProvider a la lista
         ChangeNotifierProvider(create: (_) => UserProvider()),
 
-        ChangeNotifierProvider(
-          create: (_) => TransactionsProvider()..loadInitialTransactions(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ReportsProvider()..loadInitialReports(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => NetWorthAssetProvider()..loadInitialAssets(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SettingsProvider()..initializeSettings(),
-        ),
+        ChangeNotifierProvider(create: (_) => TransactionsProvider()..loadInitialTransactions()),
+        ChangeNotifierProvider(create: (_) => ReportsProvider()..loadInitialReports()),
+        ChangeNotifierProvider(create: (_) => NetWorthAssetProvider()..loadInitialAssets()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()..initializeSettings()),
       ],
       child: const MyApp(),
     ),
@@ -102,18 +94,9 @@ class _MyHomePageState extends State<MyHomePage> {
   List<BottomNavigationBarItem> _navBarItems(BuildContext context) {
     return [
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.compare_arrows_sharp),
-        label: 'Movimientos',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.folder),
-        label: 'Informes',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.account_balance_wallet),
-        label: 'Activos',
-      ),
+      const BottomNavigationBarItem(icon: Icon(Icons.compare_arrows_sharp), label: 'Movimientos'),
+      const BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Informes'),
+      const BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Activos'),
     ];
   }
 

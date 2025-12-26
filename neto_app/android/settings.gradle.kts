@@ -19,10 +19,15 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.9.1" apply false
+    // Asegúrate de que esta versión coincida con la de tu build.gradle
+    id("com.android.application") version "8.6.0" apply false
+    
     // START: FlutterFire Configuration
-    id("com.google.gms.google-services") version("4.3.15") apply false
+    // ACTUALIZADO: De 4.3.15 a 4.4.2 para mejor compatibilidad con Kotlin 2.1.0
+    id("com.google.gms.google-services") version "4.4.2" apply false
     // END: FlutterFire Configuration
+    
+    // YA ACTUALIZADO: Excelente decisión usar 2.1.0
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
 }
 
